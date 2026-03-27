@@ -1,0 +1,328 @@
+{% extends 'accounts/base.html' %}
+{% block content %}
+
+<div class="relative min-h-screen bg-[#0b0f19] text-white overflow-hidden">
+
+  <!-- 🔥 Background -->
+  <div class="absolute inset-0 bg-gradient-to-br from-[#0b0f19] via-[#0f172a] to-[#020617]"></div>
+
+  <!-- Glow Effects -->
+  <div class="absolute w-[500px] h-[500px] bg-cyan-500/20 blur-[140px] -top-40 -left-40"></div>
+  <div class="absolute w-[500px] h-[500px] bg-purple-500/20 blur-[140px] -bottom-40 -right-40"></div>
+
+  <div class="relative z-10 px-4 md:px-10 py-10">
+
+    <!-- HEADER -->
+    <div class="max-w-7xl mx-auto text-center mb-14">
+      <h1 class="text-3xl md:text-6xl font-extrabold bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent">
+        Welcome back, {{ request.user.first_name|default:request.user.email }} 👋
+      </h1>
+      <p class="text-white/60 mt-4 max-w-xl mx-auto">
+        Your AI-powered career intelligence dashboard 🚀
+      </p>
+    </div>
+
+<!-- 🚀 GETTING STARTED CARD -->
+<div class="max-w-7xl mx-auto mb-10">
+  <div class="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 transition hover:scale-[1.02] hover:shadow-[0_0_40px_rgba(59,130,246,0.3)]">
+
+    <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
+      🚀 Getting Started
+    </h3>
+
+    <div class="space-y-4">
+
+      <!-- STEP 1 -->
+      <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
+        <div>
+          <p class="font-semibold">1. Complete Profile</p>
+          <p class="text-sm text-white/50">Add your name & profile details</p>
+        </div>
+        <span class="text-green-400 font-bold">
+{% if request.user.first_name and request.user.last_name and profile.profile_picture and profile.interest and profile.student_skills.exists %}
+  ✔
+{% else %}
+  ➜
+{% endif %}        </span>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
+        <div>
+          <p class="font-semibold">2. Add Skills</p>
+          <p class="text-sm text-white/50">Tell us what you know</p>
+        </div>
+        <span class="text-green-400 font-bold">
+          {% if profile.student_skills.exists %}✔{% else %}➜{% endif %}
+        </span>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
+        <div>
+          <p class="font-semibold">3. Set Interest</p>
+          <p class="text-sm text-white/50">Choose your career interest</p>
+        </div>
+        <span class="text-green-400 font-bold">
+          {% if profile.interest %}✔{% else %}➜{% endif %}
+        </span>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="flex items-center justify-between bg-white/5 p-4 rounded-xl border border-white/10">
+        <div>
+          <p class="font-semibold">4. Take Career Quiz</p>
+          <p class="text-sm text-white/50">Get AI-based recommendation</p>
+        </div>
+        <span class="text-green-400 font-bold">
+          {% if career_result %}✔{% else %}➜{% endif %}
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+    <!-- GRID -->
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+
+      <!-- ACCOUNT -->
+      <div class="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 transition duration-500 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(0,255,255,0.3)]">
+
+        <h3 class="text-lg font-semibold mb-6">👤 Account</h3>
+
+        <div class="flex justify-center mb-5">
+          {% if profile.profile_picture %}
+            <img src="{{ profile.profile_picture.url }}"
+                 class="w-24 h-24 rounded-full border-2 border-cyan-400 object-cover transition group-hover:scale-110">
+          {% else %}
+            <div class="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center">
+              No Image
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="text-center">
+          <p class="text-cyan-300 font-semibold">{{ request.user.get_full_name|default:"Not set" }}</p>
+          <p class="text-white/50 text-sm">{{ request.user.email }}</p>
+        </div>
+
+        <a href="{% url 'edit_account' %}" 
+           class="mt-5 block text-center bg-gradient-to-r from-cyan-400 to-blue-500 py-2 rounded-xl text-sm">
+          Edit Profile
+        </a>
+      </div>
+
+      <!-- SKILLS + QUIZ -->
+      <div class="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 transition duration-500 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(34,197,94,0.3)]">
+
+        <h3 class="text-lg font-semibold mb-4">🎯 Skills & Quiz</h3>
+
+        <p class="text-white/50 text-sm">Interest</p>
+        <p class="text-green-300 mb-4">{{ profile.interest|default:"Not set" }}</p>
+
+        <div class="flex flex-wrap gap-2 mb-4">
+          {% for ss in profile.student_skills.all %}
+            <span class="px-3 py-1 text-xs bg-green-400/20 border border-green-400 rounded-full">
+              {{ ss.skill.name }} ({{ ss.level }})
+            </span>
+          {% empty %}
+            <span class="text-red-400 text-sm">No skills</span>
+          {% endfor %}
+        </div>
+
+        <a href="{% url 'edit_profile' %}" 
+           class="block text-center bg-gradient-to-r from-green-400 to-emerald-500 py-2 rounded-xl text-sm mb-4">
+          Update Skills
+        </a>
+
+        <!-- QUIZ -->
+        {% if not career_result %}
+          {% if profile.student_skills.exists and profile.interest %}
+            <a href="{% url 'career_quiz' %}">
+              <button class="w-full bg-gradient-to-r from-cyan-400 to-blue-500 py-2 rounded-xl text-sm hover:scale-105 transition">
+                🚀 Take Quiz
+              </button>
+            </a>
+          {% else %}
+            <button class="w-full bg-gray-600 py-2 rounded-xl text-sm cursor-not-allowed">
+              🔒 Unlock Quiz
+            </button>
+          {% endif %}
+        {% else %}
+          <p class="text-green-400 text-center text-sm font-semibold">✅ Completed</p>
+        {% endif %}
+
+      </div>
+
+      <!-- PROGRESS -->
+      <div class="group bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 transition duration-500 hover:scale-[1.05] hover:-translate-y-2 hover:shadow-[0_10px_40px_rgba(16,185,129,0.3)]">
+
+        <h3 class="text-lg font-semibold mb-5">📊 Profile Completion</h3>
+
+        <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+          <div class="h-3 bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-1000"
+               style="width: {{ completion }}%">
+          </div>
+        </div>
+
+        <p class="mt-4 text-2xl font-bold text-green-400">{{ completion }}%</p>
+
+      </div>
+
+      
+
+    </div> <br><br>
+
+    <!-- 🔥 HERO AI CARD (UPGRADED) -->
+    <div class="max-w-7xl mx-auto mb-10">
+      <div class="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 transition duration-500 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(168,85,247,0.5)]">
+
+        <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">🤖 AI Career Insight</h3>
+
+        {% if career %}
+          <p class="text-white/50 text-sm">Top Match</p>
+
+          <a href="{% url 'career_detail' career.id %}" 
+             class="text-4xl md:text-5xl font-extrabold text-green-400 mt-2 inline-block hover:scale-105 transition">
+            {{ career.name }}
+          </a>
+
+          {% if match_percentage %}
+            <p class="mt-3 text-white/70 text-lg">
+              Match Score:
+              <span class="text-green-400 font-bold">{{ match_percentage }}%</span>
+            </p>
+          {% endif %}
+
+          {% if skill_gap %}
+            <div class="mt-5">
+              <p class="text-white/50 text-sm mb-2">Skills to Improve</p>
+              <div class="flex flex-wrap gap-2">
+                {% for skill in skill_gap %}
+                  <span class="px-3 py-1 text-xs bg-purple-400/20 border border-purple-400 rounded-full">
+                    {{ skill }}
+                  </span>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}
+
+        {% else %}
+          <p class="text-red-400">No AI recommendation yet 🚧</p>
+        {% endif %}
+
+      </div>
+
+
+{% if career and chart_labels %}
+<div class="max-w-7xl mx-auto mt-10">
+  <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3l p-6">
+
+    <h3 class="text-xl font-semibold mb-6 flex items-center gap-2">
+      📊 Skill Comparison (You vs Market)
+    </h3>
+
+    <canvas id="skillChart" class="bg-transparent" height="120"></canvas>
+
+    <!-- 🔥 LEGEND (UNCHANGED) -->
+    <div class="mt-6 flex flex-wrap gap-6 text-sm text-white/70">
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+        <span>Weak (Needs improvement)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+        <span>Strong (Good level)</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const labels = {{ chart_labels|safe }};
+const requiredData = {{ chart_required|safe }};
+const userData = {{ chart_user|safe }};
+
+// ✅ FIX 1: DO NOT SCALE DATA (backend already correct)
+const marketData = requiredData;
+
+// ✅ FIX 2: make 0 visible (else invisible bar)
+const userDataVisible = userData.map(val => val === 0 ? 5 : val);
+
+// ✅ FIX 3: correct color logic (based on REAL values, not scaled)
+const userColors = userData.map((val, i) => {
+  const gap = requiredData[i] - val;
+
+  if (val === 0) return "rgba(239,68,68,1)";      // pure red (weak)
+  if (gap > 50) return "rgba(239,68,68,0.9)";     // red
+  return "rgba(34,197,94,0.9)";                   // green
+});
+
+const ctx = document.getElementById('skillChart');
+
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: labels,
+    datasets: [
+      {
+        label: 'Market Demand',
+        data: marketData,
+        backgroundColor: 'rgba(168,85,247,0.5)',
+        borderRadius: 8
+      },
+      {
+        label: 'Your Skills',
+        data: userDataVisible,
+        backgroundColor: userColors,
+        borderRadius: 8
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        labels: { color: "#e5e7eb" }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const idx = context.dataIndex;
+            const label = context.dataset.label;
+
+            if(label === 'Market Demand') {
+              return `Market: ${requiredData[idx]}`;
+            }
+
+            const val = userData[idx];
+
+            if (val === 0) return "You: 0 (Weak)";
+            if (val <= 40) return `You: ${val} (Weak)`;
+            if (val <= 75) return `You: ${val} (Average)`;
+            return `You: ${val} (Strong)`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: "#cbd5e1" },
+        grid: { color: "rgba(255,255,255,0.05)" }
+      },
+      y: {
+        ticks: { color: "#cbd5e1" },
+        grid: { color: "rgba(255,255,255,0.08)" },
+        max: 100
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

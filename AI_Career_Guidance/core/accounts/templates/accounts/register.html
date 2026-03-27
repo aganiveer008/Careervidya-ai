@@ -1,0 +1,233 @@
+{% extends "accounts/base.html" %}
+{% block title %}Register{% endblock %}
+
+{% block content %}
+
+<section class="min-h-screen grid md:grid-cols-2">
+
+<!-- LEFT SIDE -->
+<div class="relative flex items-center justify-center overflow-hidden p-10 h-95 md:h-auto">
+
+  <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f" 
+       class="absolute inset-0 w-full h-full object-cover" />
+
+  <div class="absolute inset-0 bg-black/60"></div>
+
+  <div class="relative z-10 text-white px-10 max-w-lg animate-fade-in">
+    
+    <h1 class="text-5xl font-extrabold leading-tight mb-6">
+      Start Your Journey <br> with CareerVidya AI 🚀
+    </h1>
+
+    <p class="text-lg text-gray-200 mb-6">
+      Register yourself and unlock AI-powered career guidance, smart tools, and growth tracking.
+    </p>
+
+    <div class="space-y-3 text-gray-300">
+      <p>✔ AI Career Recommendations</p>
+      <p>✔ Resume Analyzer & Builder</p>
+      <p>✔ Skill & Personality Insights</p>
+      <p>✔ Personalized Growth Roadmap</p>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- RIGHT SIDE -->
+<div class="flex items-center justify-center bg-gray-100 px-6 py-12">
+
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 md:p-10 animate-slide-up">
+
+    <h2 class="text-3xl font-bold text-gray-800 text-center mb-2">
+      Create Account ✨
+    </h2>
+
+    <p class="text-center text-gray-500 mb-8">
+      Join CareerVidya AI and build your future
+    </p>
+
+    <form method="POST" class="space-y-5">
+      {% csrf_token %}
+
+      <!-- FIRST NAME -->
+      <div>
+        <label class="text-sm text-gray-600">First Name</label>
+        <input
+          type="text"
+          name="first_name"
+          placeholder="Enter your first name"
+          pattern="[A-Za-z]+"
+          title="Only letters allowed"
+          required
+          class="w-full mt-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+        >
+      </div>
+
+      <!-- LAST NAME -->
+      <div>
+        <label class="text-sm text-gray-600">Last Name</label>
+        <input
+          type="text"
+          name="last_name"
+          placeholder="Enter your last name"
+          pattern="[A-Za-z]+"
+          title="Only letters allowed"
+          required
+          class="w-full mt-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+        >
+      </div>
+
+      <!-- EMAIL -->
+      <div>
+        <label class="text-sm text-gray-600">Email</label>
+        <input
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          required
+          class="w-full mt-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+        >
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="relative">
+        <label class="text-sm text-gray-600">Password</label>
+        <input
+          id="password"
+          type="password"
+          name="password"
+          placeholder="Create a password"
+          required
+          onkeyup="checkStrength()"
+          class="w-full mt-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+        >
+        <span onclick="togglePassword()" class="absolute right-4 top-10 cursor-pointer text-gray-500">👁️</span>
+      </div>
+
+      <!-- PASSWORD STRENGTH -->
+      <div class="text-sm text-gray-600">
+        Strength:
+        <span id="strength" class="font-semibold text-red-500">Weak</span>
+      </div>
+
+    <!-- ✅ CAPTCHA SECTION -->
+<div>
+  <label class="text-sm text-gray-600">Captcha</label>
+
+  <div class="flex items-center gap-3 mt-2">
+    <img id="captcha-img" src="{{ captcha_image }}" alt="captcha" class="h-12 border rounded-lg">
+
+    <!-- 🔄 Refresh Button -->
+    <button type="button" onclick="refreshCaptcha()" class="text-indigo-600 text-sm">
+      🔄 Refresh
+    </button>
+  </div>
+
+  <input type="hidden" name="captcha_key" id="captcha-key" value="{{ captcha_key }}">
+
+  <input
+    type="text"
+    name="captcha"
+    placeholder="Enter captcha"
+    required
+    class="w-full mt-2 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
+  >
+</div>
+      {% if error %}
+      <p class="text-red-500 text-sm text-center">{{ error }}</p>
+      {% endif %}
+
+      <!-- BUTTON -->
+      <button class="w-full py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition shadow-md">
+        Register
+      </button>
+
+      <!-- DIVIDER -->
+      <div class="flex items-center gap-3">
+        <div class="flex-1 h-px bg-gray-300"></div>
+        <span class="text-gray-400 text-sm">or</span>
+        <div class="flex-1 h-px bg-gray-300"></div>
+      </div>
+
+      <!-- GOOGLE SIGNUP -->
+      <a href="/accounts/google/login/" 
+         class="w-full border py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 transition">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5">
+        Continue with Google
+      </a>
+
+      <p class="text-center text-sm text-gray-600 mt-4">
+        Already have an account?
+        <a href="/login/" class="text-indigo-600 font-semibold hover:underline">
+          Login
+        </a>
+      </p>
+
+    </form>
+
+  </div>
+
+</div>
+
+</section>
+
+<script>
+function togglePassword() {
+  const pwd = document.getElementById("password");
+  pwd.type = pwd.type === "password" ? "text" : "password";
+}
+
+function checkStrength() {
+  const pwd = document.getElementById("password").value;
+  const strength = document.getElementById("strength");
+
+  if (pwd.length < 6) {
+    strength.textContent = "Weak";
+    strength.className = "font-semibold text-red-500";
+  } else if (pwd.match(/[A-Z]/) && pwd.match(/[0-9]/)) {
+    strength.textContent = "Strong";
+    strength.className = "font-semibold text-green-500";
+  } else {
+    strength.textContent = "Medium";
+    strength.className = "font-semibold text-yellow-500";
+  }
+}
+
+function refreshCaptcha() {
+  fetch("/refresh-captcha/")
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById("captcha-img").src = data.captcha_image;
+      document.getElementById("captcha-key").value = data.captcha_key;
+    });
+}
+</script>
+
+<style>
+.animate-slide-up {
+  opacity: 0;
+  transform: translateY(40px);
+  animation: slideUp 0.7s ease forwards;
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeIn 1s ease forwards;
+}
+
+@keyframes slideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+</style>
+
+{% endblock %}

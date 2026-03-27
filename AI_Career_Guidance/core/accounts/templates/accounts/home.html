@@ -1,0 +1,419 @@
+{% extends 'accounts/base.html' %}
+{% load static %}
+{% block content %}
+
+<section class="relative min-h-screen flex flex-col md:flex-row items-center bg-[#070b1a] text-white overflow-hidden">
+
+  <!-- ✅ MOBILE SLIDER -->
+  <div class="relative w-full md:hidden overflow-hidden">
+
+    <div id="mobileSlider" class="flex w-full h-[450px] transition-transform duration-700 ease-in-out">
+
+      <img src="{% static 'images/Career.jpeg' %}"
+           class="w-full h-full object-cover flex-shrink-0">
+
+      <img src="{% static 'images/student3.jpg' %}"
+           class="w-full h-full object-cover flex-shrink-0">
+
+      <img src="{% static 'images/student4.webp' %}"
+           class="w-full h-full object-cover flex-shrink-0">
+
+    </div>
+
+    <!-- 🔥 MOBILE GRADIENT -->
+    <div class="absolute inset-0 bg-gradient-to-t from-[#070b1a] via-[#070b1a]/70 to-transparent"></div>
+
+  </div>
+
+  <!-- LEFT CONTENT -->
+  <div class="relative z-10 max-w-7xl mx-auto px-6 py-20 md:py-24 w-full">
+
+    <div class="max-w-2xl">
+
+      <h1 class="text-4xl md:text-6xl font-extrabold mb-6">
+        AI-Powered Career Guidance
+        <span class="block text-indigo-400">
+          Find Your Perfect Career Path
+        </span>
+      </h1>
+
+  <p class="text-gray-300 text-lg mb-10 max-w-xl">
+        CareerVidya AI analyzes your skills, personality and interests —
+        delivering a personalized career roadmap built for your future.
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-5">
+{% if request.user.is_authenticated and not quiz_done and can_take_quiz %}
+    <a href="{% url 'career_quiz' %}"
+       class="px-8 py-4 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-[0_0_35px_rgba(139,92,246,0.7)] transition-all duration-300">
+       Take Free AI Career Test
+    </a>
+
+{% elif request.user.is_authenticated and not can_take_quiz %}
+    <a href="{% url 'dashboard' %}"
+       class="px-8 py-4 rounded-xl font-semibold bg-gradient-to-r from-yellow-500 to-orange-500 hover:shadow-[0_0_35px_rgba(251,191,36,0.7)] transition-all duration-300">
+       Select Skills & Interests First
+    </a>
+
+{% elif request.user.is_authenticated and quiz_done %}
+    <a href="{% url 'dashboard' %}"
+       class="px-8 py-4 rounded-xl font-semibold bg-gradient-to-r from-green-500 to-emerald-600 hover:shadow-[0_0_35px_rgba(16,185,129,0.7)] transition-all duration-300">
+       Go To Dashboard
+    </a>
+{% endif %}
+
+        <a href="{% url 'skill_based' %}"
+           class="px-8 py-4 rounded-xl border border-white/20 backdrop-blur-md hover:bg-white/10 transition-all duration-300">
+           Explore Career Paths
+        </a>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ✅ DESKTOP (UNCHANGED) -->
+  <div class="hidden md:block absolute right-0 top-0 h-full w-1/2 overflow-hidden">
+
+    <div id="slider" class="flex h-full w-full transition-transform duration-700 ease-in-out">
+
+      <img src="{% static 'images/Career.jpeg' %}"
+           class="w-full h-full object-cover flex-shrink-0">
+
+      <img src="{% static 'images/student3.jpg' %}"
+           class="w-full h-full object-cover flex-shrink-0">
+
+      <img src="{% static 'images/student4.webp' %}"
+           class="w-full h-full object-cover flex-shrink-0">
+
+    </div>
+
+    <div class="absolute inset-0 bg-gradient-to-l from-transparent via-[#070b1a]/60 to-[#070b1a]"></div>
+
+  </div>
+
+</section>
+
+<!-- PROBLEM -->
+<section class="py-24 bg-[#0b1023] text-white text-center">
+  <h2 class="text-4xl font-bold mb-12">
+    Confused About Your Future? You're Not Alone.
+  </h2>
+
+  <div class="max-w-5xl mx-auto grid md:grid-cols-3 gap-10 text-gray-300">
+
+    <div class="glass-card p-8">
+      <div class="text-4xl mb-4">❓</div>
+      <p>Too many career options but no clarity</p>
+    </div>
+
+    <div class="glass-card p-8">
+      <div class="text-4xl mb-4">🎯</div>
+      <p>Not sure what matches your strengths</p>
+    </div>
+
+    <div class="glass-card p-8">
+      <div class="text-4xl mb-4">📉</div>
+      <p>Worried about salary & future scope</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="py-24 bg-[#070b1a] text-white text-center">
+  <h2 class="text-4xl font-bold mb-16">How It Works</h2>
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+
+    <div class="glass-card p-10">
+      <div class="text-3xl mb-3">🧠</div>
+      <h3 class="font-bold text-xl mb-2">Analyze You</h3>
+      <p class="text-gray-400">We analyze your skills & personality</p>
+    </div>
+
+    <div class="glass-card p-10">
+      <div class="text-3xl mb-3">🎯</div>
+      <h3 class="font-bold text-xl mb-2">Match Careers</h3>
+      <p class="text-gray-400">AI finds best career options</p>
+    </div>
+
+    <div class="glass-card p-10">
+      <div class="text-3xl mb-3">🚀</div>
+      <h3 class="font-bold text-xl mb-2">Build Roadmap</h3>
+      <p class="text-gray-400">Step-by-step growth plan</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="py-24 bg-[#0b1023] text-white text-center">
+  <h2 class="text-4xl font-bold mb-16">Platform Features</h2>
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 text-left">
+
+    <div class="glass-card p-8">
+      <h3 class="font-semibold text-lg mb-2">AI Career Matching</h3>
+      <p class="text-gray-400 text-sm">Personalized career suggestions based on your profile</p>
+    </div>
+
+    <div class="glass-card p-8">
+      <h3 class="font-semibold text-lg mb-2">Skill Analysis</h3>
+      <p class="text-gray-400 text-sm">Identify strengths and skill gaps</p>
+    </div>
+
+    <div class="glass-card p-8">
+      <h3 class="font-semibold text-lg mb-2">Salary Insights</h3>
+      <p class="text-gray-400 text-sm">Know earning potential of each career</p>
+    </div>
+
+    <div class="glass-card p-8">
+      <h3 class="font-semibold text-lg mb-2">Career Roadmaps</h3>
+      <p class="text-gray-400 text-sm">Step-by-step learning guidance</p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= COURSES SECTION ================= -->
+<section class="py-24 bg-[#070b1a] text-white text-center">
+  <h2 class="text-4xl font-bold mb-6">
+    Recommended Courses For You
+  </h2>
+
+  <p class="text-gray-400 mb-14">
+    Learn in-demand skills and build your career faster 🚀
+  </p>
+
+  {% if courses %}
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-8 px-6">
+
+    {% for course in courses %}
+    <div class="glass-card p-6 text-left hover:scale-105 transition duration-300">
+
+      {% if course.content_type == "image" %}
+        <img src="{{ course.image }}" class="rounded-xl mb-4 w-full h-40 object-cover">
+      {% else %}
+        <iframe src="{{ course.video_url }}" class="rounded-xl mb-4 w-full h-40"></iframe>
+      {% endif %}
+
+      <h3 class="text-xl font-semibold mb-2">{{ course.title }}</h3>
+
+      <p class="text-gray-400 text-sm mb-3 line-clamp-2">
+        {{ course.description }}
+      </p>
+
+      <!-- Rating -->
+<div class="flex items-center mb-3">
+  {% for i in "12345"|slice:":course.rating"|make_list %}
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.955a1 1 0 00.95.69h4.148c.969 0 1.371 1.24.588 1.81l-3.36 2.44a1 1 0 00-.364 1.118l1.287 3.955c.3.921-.755 1.688-1.54 1.118l-3.36-2.44a1 1 0 00-1.176 0l-3.36 2.44c-.784.57-1.838-.197-1.539-1.118l1.286-3.955a1 1 0 00-.364-1.118L2.027 9.382c-.783-.57-.38-1.81.588-1.81h4.148a1 1 0 00.95-.69l1.286-3.955z"/>
+    </svg>
+  {% endfor %}
+  <span class="ml-2 text-gray-300 text-sm">{{ course.rating }}/5</span>
+</div>
+
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-indigo-400 font-bold">₹ {{ course.price }}</span>
+        <span class="text-sm text-gray-500">{{ course.level }}</span>
+      </div>
+
+      <a href="{{ course.link }}" target="_blank">
+        <button class="w-full py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-[0_0_20px_rgba(139,92,246,0.7)] transition">
+          Enroll Now
+        </button>
+      </a>
+
+    </div>
+    {% endfor %}
+
+  </div>
+
+  {% else %}
+
+  <!-- 🔥 EMPTY STATE -->
+  <div class="mt-12">
+    <p class="text-gray-400 text-lg mb-4">
+      No courses available yet 😕
+    </p>
+
+    <p class="text-gray-500 text-sm mb-6">
+      We are adding the best courses for you. Stay tuned!
+    </p>
+
+    <a href="/courses/"
+       class="px-6 py-3 border border-white/20 rounded-xl hover:bg-white/10 transition">
+       Explore Courses
+    </a>
+  </div>
+
+  {% endif %}
+
+  <!-- View All Button -->
+   <div class="mt-12">
+  {% if request.user.is_authenticated %}
+    <a href="/courses/"
+       class="px-8 py-3 border border-white/20 rounded-xl hover:bg-white/10 transition">
+       View All Courses
+    </a>
+  {% else %}
+    <a href="{% url 'login' %}"
+       class="px-8 py-3 border border-white/20 rounded-xl hover:bg-white/10 transition">
+       View All Courses
+    </a>
+  {% endif %}
+</div>
+</section>
+<!-- ================= SOCIAL PROOF ================= -->
+<section class="py-24 bg-[#070b1a] text-white text-center" id="statsSection">
+
+  <h2 class="text-4xl font-bold mb-16">
+    Trusted by Students Across India
+  </h2>
+
+  <div class="max-w-5xl mx-auto grid md:grid-cols-3 gap-12">
+
+    <div class="glass-card p-10">
+      <h3 class="counter text-5xl font-bold text-indigo-400" data-target="100">0</h3>
+      <p class="text-gray-400 mt-2">Career Paths</p>
+    </div>
+
+    <div class="glass-card p-10">
+      <h3 class="counter text-5xl font-bold text-indigo-400" data-target="500">0</h3>
+      <p class="text-gray-400 mt-2">Students Guided</p>
+    </div>
+
+    <div class="glass-card p-10">
+      <h3 class="counter text-5xl font-bold text-indigo-400" data-target="95">0</h3>
+      <p class="text-gray-400 mt-2">Accuracy Rate %</p>
+    </div>
+
+  </div>
+
+  <p class="text-gray-500 text-sm mt-6">
+    *Based on internal AI analysis
+  </p>
+
+</section>
+
+<!-- CTA -->
+<section class="py-28 text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white">
+  <h2 class="text-4xl font-bold mb-4">
+    Still Confused About Your Career?
+  </h2>
+
+  <p class="mb-6 text-lg">
+    Take our AI test and get your career path instantly.
+  </p>
+
+  <a href="{% url 'career_quiz' %}"
+     class="px-10 py-4 bg-black/30 rounded-xl hover:bg-black/50 transition">
+     Get Started Now
+  </a>
+</section>
+
+<style>
+.glass-card {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+  transition: 0.3s;
+}
+.glass-card:hover {
+  transform: translateY(-5px);
+}
+
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 1s ease;
+}
+.fade-in-up.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+</style>
+
+<script>
+const elements = document.querySelectorAll(".fade-in-up");
+const obs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add("active"); }
+  });
+},{threshold:0.2});
+elements.forEach(el=>obs.observe(el));
+
+window.addEventListener("scroll",()=>{
+  const winScroll = document.documentElement.scrollTop;
+  const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  document.getElementById("progressBar").style.width = (winScroll/height)*100 + "%";
+});
+
+const statsSection = document.getElementById("statsSection");
+let counterStarted = false;
+
+const counterObserver = new IntersectionObserver(entries=>{
+  if(entries[0].isIntersecting && !counterStarted){
+    counterStarted = true;
+
+    document.querySelectorAll(".counter").forEach(counter=>{
+      const update=()=>{
+        const target=+counter.getAttribute("data-target");
+        const c=+counter.innerText;
+        const inc=target/100;
+
+        if(c<target){
+          counter.innerText=Math.ceil(c+inc);
+          setTimeout(update,20);
+        } else {
+          counter.innerText=target;
+        }
+      };
+      update();
+    });
+  }
+},{threshold:0.5});
+
+counterObserver.observe(statsSection);
+
+let indexDesktop = 0;
+let indexMobile = 0;
+
+const desktopSlider = document.getElementById("slider");
+const mobileSlider = document.getElementById("mobileSlider");
+
+function startSlider(slider, indexRef) {
+  if (!slider) return;
+
+  const total = slider.children.length;
+
+  // Clone first slide at the end for smooth loop
+  const firstSlideClone = slider.children[0].cloneNode(true);
+  slider.appendChild(firstSlideClone);
+
+  setInterval(() => {
+    indexRef.value++;
+    slider.style.transition = "transform 0.7s ease-in-out";
+    slider.style.transform = `translateX(-${indexRef.value * 100}%)`;
+
+    // Reset instantly if last (cloned) slide reached
+    if (indexRef.value === total) {
+      setTimeout(() => {
+        slider.style.transition = "none";
+        slider.style.transform = `translateX(0)`;
+        indexRef.value = 0;
+      }, 700); // match the CSS transition duration
+    }
+  }, 5000);
+}
+
+// Objects to hold index (pass by reference)
+startSlider(desktopSlider, { value: indexDesktop });
+startSlider(mobileSlider, { value: indexMobile });
+
+</script>
+
+{% endblock %}

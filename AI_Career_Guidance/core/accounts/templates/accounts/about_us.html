@@ -1,0 +1,202 @@
+{% extends "accounts/base.html" %}
+{% load static %}
+{% block content %}
+
+<!-- ================= HERO ================= -->
+<section class="relative bg-[#070b1a] text-white overflow-hidden">
+
+  <!-- Background -->
+  <div class="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#111c44] to-black"></div>
+
+  <!-- Animated Blobs -->
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <div class="relative max-w-6xl mx-auto px-6 py-32 text-center">
+
+    <h1 class="reveal text-5xl md:text-6xl font-extrabold mb-8">
+      About
+      <span class="animated-gradient-text">
+        CareerVidya AI
+      </span>
+    </h1>
+
+    <p class="reveal delay-200 text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto">
+      Your AI-powered companion to explore career paths, discover opportunities,
+      and unlock your full potential in the modern tech world.
+    </p>
+
+  </div>
+</section>
+
+<!-- ================= OUR STORY ================= -->
+<section class="py-28 bg-[#0b1023] text-white">
+  <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+
+    <div class="reveal-left">
+      <img src="{% static 'images/career.jpg' %}"
+           class="rounded-3xl shadow-2xl border border-white/10 hover:scale-105 hover:rotate-1 transition-all duration-700 w-full"
+           alt="Our Mission">
+    </div>
+
+    <div class="space-y-6 reveal-right">
+      <h2 class="text-4xl font-bold">Our Story</h2>
+
+      <p class="text-gray-300 text-lg leading-relaxed">
+        <strong class="text-cyan-400">CareerVidya AI</strong> bridges the gap between
+        talent and opportunity using intelligent AI systems.
+      </p>
+
+      <p class="text-gray-400 text-lg leading-relaxed">
+        Our algorithms analyze skills, interests, and market trends to provide
+        precise career recommendations.
+      </p>
+
+      <p class="text-gray-400 text-lg leading-relaxed">
+        We make career growth predictable, achievable,
+        and accessible for everyone.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= FEATURES ================= -->
+<section class="py-28 bg-[#070b1a] text-white text-center">
+  <h2 class="reveal text-4xl font-bold mb-20">What We Offer</h2>
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+
+    <div class="glass-card reveal">
+      <div class="text-5xl mb-6">🧠</div>
+      <h3 class="text-2xl font-semibold mb-4">AI Recommendations</h3>
+      <p class="text-gray-400">
+        Smart career suggestions powered by AI.
+      </p>
+    </div>
+
+    <div class="glass-card reveal delay-200">
+      <div class="text-5xl mb-6">📚</div>
+      <h3 class="text-2xl font-semibold mb-4">Learning Resources</h3>
+      <p class="text-gray-400">
+        Curated tech courses to accelerate your growth.
+      </p>
+    </div>
+
+    <div class="glass-card reveal delay-400">
+      <div class="text-5xl mb-6">🚀</div>
+      <h3 class="text-2xl font-semibold mb-4">Career Insights</h3>
+      <p class="text-gray-400">
+        Stay updated with trending skills & careers.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================= CTA ================= -->
+<section class="relative py-28 text-center overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 opacity-90"></div>
+
+  <div class="relative z-10 text-white max-w-4xl mx-auto px-6">
+
+    <h2 class="reveal text-4xl md:text-5xl font-bold mb-6">
+      Start Your Journey with CareerVidya AI
+    </h2>
+
+    <a href="{% url 'dashboard' %}"
+       class="mt-6 inline-block px-10 py-4 bg-black/30 backdrop-blur-xl rounded-xl transition-all duration-300 hover:bg-black/50 hover:scale-110 hover:shadow-[0_0_25px_rgba(255,255,255,0.4)]">
+       Go to Dashboard
+    </a>
+
+  </div>
+</section>
+
+<!-- ================= STYLES ================= -->
+<style>
+
+/* Gradient Animated Text */
+.animated-gradient-text {
+  background: linear-gradient(-45deg,#22d3ee,#3b82f6,#6366f1,#22d3ee);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientMove 6s ease infinite;
+}
+@keyframes gradientMove {
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
+}
+
+/* Glass Cards */
+.glass-card {
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  padding: 40px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.5s ease;
+}
+.glass-card:hover {
+  transform: translateY(-15px) scale(1.05);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+}
+
+/* Scroll Reveal */
+.reveal,
+.reveal-left,
+.reveal-right {
+  opacity: 0;
+  transition: all 1s ease;
+}
+.reveal { transform: translateY(60px); }
+.reveal-left { transform: translateX(-80px); }
+.reveal-right { transform: translateX(80px); }
+
+.reveal.active,
+.reveal-left.active,
+.reveal-right.active {
+  opacity: 1;
+  transform: translate(0);
+}
+
+/* Delays */
+.delay-200 { transition-delay: .2s; }
+.delay-400 { transition-delay: .4s; }
+
+/* Floating Blobs */
+.blob {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: .4;
+  animation: float 12s infinite alternate ease-in-out;
+}
+.blob1 { background:#22d3ee; top:-150px; left:-150px; }
+.blob2 { background:#6366f1; bottom:-150px; right:-150px; }
+
+@keyframes float {
+  from { transform: translateY(0px); }
+  to { transform: translateY(40px); }
+}
+
+</style>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add("active");
+    }
+  });
+},{threshold:0.2});
+
+document.querySelectorAll(".reveal, .reveal-left, .reveal-right")
+.forEach(el=>observer.observe(el));
+</script>
+
+{% endblock %}
