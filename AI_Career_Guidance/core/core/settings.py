@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import dj_database_url
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
 
 
 
@@ -171,14 +173,14 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'patyaldeepanshu05@gmail.com'      # Apna email
-# # EMAIL_HOST_PASSWORD = ''   
-# EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASS")    # Gmail App Password
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'patyaldeepanshu05@gmail.com'      # Apna email
+# EMAIL_HOST_PASSWORD = ''   
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASS")    # Gmail App Password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 
@@ -195,12 +197,11 @@ LOGOUT_REDIRECT_URL = '/'
 
 # SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# load_dotenv()
 
-SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
+# SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 
-DEFAULT_FROM_EMAIL = 'patyaldeepanshu05@gmail.com'
-
+# DEFAULT_FROM_EMAIL = "patyaldeepanshu05@gmail.com"
 SITE_ID = int(os.environ.get("SITE_ID", 1))
 
 AUTHENTICATION_BACKENDS = [
