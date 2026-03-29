@@ -75,28 +75,28 @@
         <div>
           <label class="text-white/60 text-sm">Education Level</label>
           <select id="education_level" name="education_level" class="input-style text-black">
-            <option value="">Select</option>
-            <option value="10th" {% if profile.education_level == "10th" %}selected{% endif %}>10th</option>
-            <option value="12th" {% if profile.education_level == "12th" %}selected{% endif %}>12th</option>
-            <option value="graduate" {% if profile.education_level == "graduate" %}selected{% endif %}>Graduate</option>
-            <option value="postgraduate" {% if profile.education_level == "postgraduate" %}selected{% endif %}>Post Graduate</option>
+            <option value="" class="text-black">Select</option>
+            <option value="10th" class="text-black" {% if profile.education_level == "10th" %}selected{% endif %}>10th</option>
+            <option value="12th"class="text-black" {% if profile.education_level == "12th" %}selected{% endif %}>12th</option>
+            <option value="graduate"class="text-black" {% if profile.education_level == "graduate" %}selected{% endif %}>Graduate</option>
+            <option value="postgraduate" class="text-black" {% if profile.education_level == "postgraduate" %}selected{% endif %}>Post Graduate</option>
           </select>
         </div>
 
         <div id="stream_div">
           <label class="text-white/60 text-sm">Stream</label>
           <select name="stream" class="input-style text-black">
-            <option value="">Select</option>
-            <option value="arts" {% if profile.stream == "arts" %}selected{% endif %}>Arts</option>
-            <option value="commerce" {% if profile.stream == "commerce" %}selected{% endif %}>Commerce</option>
-            <option value="medical" {% if profile.stream == "medical" %}selected{% endif %}>Medical</option>
-            <option value="non-medical" {% if profile.stream == "non-medical" %}selected{% endif %}>Non Medical</option>
+            <option value="" class="text-black">Select</option>
+            <option value="arts" class="text-black" {% if profile.stream == "arts" %}selected{% endif %}>Arts</option>
+            <option value="commerce" class="text-black" {% if profile.stream == "commerce" %}selected{% endif %}>Commerce</option>
+            <option value="medical" class="text-black" {% if profile.stream == "medical" %}selected{% endif %}>Medical</option>
+            <option value="non-medical" class="text-black" {% if profile.stream == "non-medical" %}selected{% endif %}>Non Medical</option>
           </select>
         </div>
 
         <div id="grad_div">
           <label class="text-white/60 text-sm">Graduation Field</label>
-          <input type="text" name="graduation_field" value="{{ profile.graduation_field }}" class="input-style">
+          <input type="text"  name="graduation_field" value="{{ profile.graduation_field }}" class="input-style">
         </div>
 
         <div id="pg_div">

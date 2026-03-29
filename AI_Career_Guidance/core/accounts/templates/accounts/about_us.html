@@ -62,47 +62,137 @@
 </section>
 
 <!-- ================= FEATURES ================= -->
-<section class="py-28 bg-[#070b1a] text-white text-center">
-  <h2 class="reveal text-4xl font-bold mb-20">What We Offer</h2>
+<!-- ================= FEATURES ================= -->
+<section class="py-28 bg-[#070b1a] text-white text-center relative overflow-hidden">
 
-  <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+  <!-- Background Glow -->
+  <div class="absolute w-[500px] h-[500px] bg-cyan-500/20 blur-[120px] -top-40 -left-40 animate-pulse"></div>
+  <div class="absolute w-[500px] h-[500px] bg-purple-500/20 blur-[120px] -bottom-40 -right-40 animate-pulse"></div>
 
-    <div class="glass-card reveal">
-      <div class="text-5xl mb-6">🧠</div>
-      <h3 class="text-2xl font-semibold mb-4">AI Recommendations</h3>
-      <p class="text-gray-400">
-        Smart career suggestions powered by AI.
+  <h2 class="text-4xl font-bold mb-20 tracking-tight bg-gradient-to-r from-cyan-300 via-blue-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
+    What We Offer
+  </h2>
+
+  <div class="max-w-6xl mx-auto grid md:grid-cols-3 gap-10 px-4">
+
+    <!-- CARD -->
+    <div class="group relative bg-white/5 border border-white/10 rounded-2xl p-6 text-left overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(34,211,238,0.2)]">
+
+      <!-- Glow layer -->
+      <div class="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+      <!-- Icon -->
+      <div class="relative text-3xl mb-4 transform transition duration-500 group-hover:scale-125 group-hover:rotate-6">
+        🤖
+      </div>
+
+      <h3 class="relative text-lg font-semibold mb-2">AI Career Recommendation</h3>
+
+      <p class="relative text-sm text-gray-400 leading-relaxed">
+        Smart AI-powered career suggestions based on your skills, interests and real market demand.
       </p>
     </div>
 
-    <div class="glass-card reveal delay-200">
-      <div class="text-5xl mb-6">📚</div>
-      <h3 class="text-2xl font-semibold mb-4">Learning Resources</h3>
-      <p class="text-gray-400">
-        Curated tech courses to accelerate your growth.
+    <!-- CARD -->
+    <div class="group relative bg-white/5 border border-white/10 rounded-2xl p-6 text-left overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(168,85,247,0.2)]">
+      <div class="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+      <div class="relative text-3xl mb-4 transform transition duration-500 group-hover:scale-125 group-hover:rotate-6">
+        💬
+      </div>
+
+      <h3 class="relative text-lg font-semibold mb-2">AI Career Mentor</h3>
+
+      <p class="relative text-sm text-gray-400 leading-relaxed">
+        Chat with AI and get real-time guidance, career advice and personalized answers.
+      </p>
+    </div>
+    <!-- CARD -->
+    <div class="group relative bg-white/5 border border-white/10 rounded-2xl p-6 text-left overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(168,85,247,0.2)]">
+      <div class="absolute inset-0 bg-gradient-to-br from-purple-400/10 to-blue-500/10 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+      <div class="relative text-3xl mb-4 transform transition duration-500 group-hover:scale-125 group-hover:rotate-6">
+        📈
+      </div>
+
+      <h3 class="relative text-lg font-semibold mb-2">Courses</h3>
+
+      <p class="relative text-sm text-gray-400 leading-relaxed">
+        Enroll in our expert-led courses to enhance your skills and advance your career.
       </p>
     </div>
 
-    <div class="glass-card reveal delay-400">
-      <div class="text-5xl mb-6">🚀</div>
-      <h3 class="text-2xl font-semibold mb-4">Career Insights</h3>
-      <p class="text-gray-400">
-        Stay updated with trending skills & careers.
+    <!-- CARD -->
+    <div class="group relative bg-white/5 border border-white/10 rounded-2xl p-6 text-left overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(59,130,246,0.2)]">
+      <div class="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+      <div class="relative text-3xl mb-4 transform transition duration-500 group-hover:scale-125 group-hover:rotate-6">
+        📄
+      </div>
+
+      <h3 class="relative text-lg font-semibold mb-2">Resume Analyzer</h3>
+
+      <p class="relative text-sm text-gray-400 leading-relaxed">
+        Improve your resume with AI feedback, suggestions and detailed skill analysis.
+      </p>
+    </div>
+
+    <!-- CARD -->
+    <div class="group relative bg-white/5 border border-white/10 rounded-2xl p-6 text-left overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(34,197,94,0.2)]">
+      <div class="absolute inset-0 bg-gradient-to-br from-green-400/10 to-emerald-500/10 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+      <div class="relative text-3xl mb-4 transform transition duration-500 group-hover:scale-125 group-hover:rotate-6">
+        🧭
+      </div>
+
+      <h3 class="relative text-lg font-semibold mb-2">Career Guide</h3>
+
+      <p class="relative text-sm text-gray-400 leading-relaxed">
+        Explore complete career insights including salary, skills, roadmap and future scope.
+      </p>
+    </div>
+
+    <!-- CARD -->
+    <div class="group relative bg-white/5 border border-white/10 rounded-2xl p-6 text-left overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(234,179,8,0.2)]">
+      <div class="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-orange-500/10 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+      <div class="relative text-3xl mb-4 transform transition duration-500 group-hover:scale-125 group-hover:rotate-6">
+        🛤️
+      </div>
+
+      <h3 class="relative text-lg font-semibold mb-2">Step-by-Step Roadmap</h3>
+
+      <p class="relative text-sm text-gray-400 leading-relaxed">
+        Follow a structured learning path designed to achieve your dream career faster.
+      </p>
+    </div>
+
+    <!-- CARD -->
+    <div class="group relative bg-white/5 border border-white/10 rounded-2xl p-6 text-left overflow-hidden transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(244,63,94,0.2)]">
+      <div class="absolute inset-0 bg-gradient-to-br from-pink-400/10 to-red-500/10 opacity-0 group-hover:opacity-100 transition duration-500"></div>
+
+      <div class="relative text-3xl mb-4 transform transition duration-500 group-hover:scale-125 group-hover:rotate-6">
+        ⬇️
+      </div>
+
+      <h3 class="relative text-lg font-semibold mb-2">Download as PDF</h3>
+
+      <p class="relative text-sm text-gray-400 leading-relaxed">
+        Save career guides and roadmaps as PDF for offline learning anytime.
       </p>
     </div>
 
   </div>
 </section>
-
 <!-- ================= CTA ================= -->
 <section class="relative py-28 text-center overflow-hidden">
   <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 opacity-90"></div>
 
   <div class="relative z-10 text-white max-w-4xl mx-auto px-6">
 
-    <h2 class="reveal text-4xl md:text-5xl font-bold mb-6">
+    <h3 class="reveal text-4xl md:text-3xl font-bold mb-6">
       Start Your Journey with CareerVidya AI
-    </h2>
+    </h3>
 
     <a href="{% url 'dashboard' %}"
        class="mt-6 inline-block px-10 py-4 bg-black/30 backdrop-blur-xl rounded-xl transition-all duration-300 hover:bg-black/50 hover:scale-110 hover:shadow-[0_0_25px_rgba(255,255,255,0.4)]">

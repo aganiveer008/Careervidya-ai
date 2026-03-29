@@ -53,15 +53,16 @@ def dashboard(request):
 
     # ================= INTEREST NAME =================
     interest_name = None
-    if profile.interest:
-        category = Category.objects.filter(
-            name__iexact=profile.interest.strip()
-        ).first()
 
-        if category:
-            interest_name = category.name
+    if profile.interest:
+        val = str(profile.interest).strip()
+
+        if val.isdigit():
+            category = Category.objects.filter(id=int(val)).first()
+            if category:
+                interest_name = category.name
         else:
-            interest_name = profile.interest
+            interest_name = val.title()
 
     # ================= QUIZ RESULT =================
     result = CombinedCareerResult.latest_for_student(profile)
@@ -108,15 +109,21 @@ def dashboard(request):
     completion = 0
 
     if profile.profile_picture:
-        completion += 20
+        completion += 15
     if request.user.first_name:
-        completion += 20
+        completion += 15
     if request.user.last_name:
-        completion += 20
+        completion += 15
     if profile.student_skills.exists():
         completion += 20
     if profile.education_level:
-        completion += 20
+        completion += 15
+    if profile.interest:
+        completion += 10
+
+    # 🔥 IMPORTANT: quiz add kar
+    if result:
+        completion += 10
 
     completion = min(completion, 100)
 
@@ -564,23 +571,31 @@ def calculate_combined_career(profile):
 
     for career in Career.objects.prefetch_related("required_skills").all():
 
-        career_skills = {
+        career_skills = [
             skill.name.strip().lower()
             for skill in career.required_skills.all()
-        }
+        ]
 
         if not career_skills:
             continue
 
-        max_score = len(career_skills) * 5
-        user_score = sum(user_skills.get(skill, 0) for skill in career_skills)
-        skill_percentage = (user_score / max_score) * 100 if max_score else 0
+        total_score = 0
 
-        # ❌ QUIZ REMOVE (already calculated earlier)
-        final_score = round(skill_percentage)
+        for skill in career_skills:
+            user_level = user_skills.get(skill, 0)
 
-        career_scores.append((career, final_score))
+            if user_level > 0:
+                # normalize level (0–1)
+                total_score += user_level / 10
+            else:
+                total_score += 0
 
+        # final percentage
+        skill_percentage = (total_score / len(career_skills)) * 100
+
+        career_scores.append((career, round(skill_percentage)))
+
+    # sort best → worst
     career_scores.sort(key=lambda x: x[1], reverse=True)
 
     top_career = career_scores[0][0] if career_scores else None
@@ -896,8 +911,9 @@ def career_quiz(request):
                 option = CareerQuizOption.objects.get(id=selected_option_id)
 
                 if option.category:
-                    scores[option.category] = (
-                        scores.get(option.category, 0) + option.weight
+                    # ✅ FIX: use category.id (safe key)
+                    scores[option.category.id] = (
+                        scores.get(option.category.id, 0) + option.weight
                     )
 
             except CareerQuizOption.DoesNotExist:
@@ -914,11 +930,11 @@ def career_quiz(request):
 
         # -------- Top 2 Personality Categories --------
         sorted_categories = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        top_categories = [cat[0] for cat in sorted_categories[:2]]
+        top_categories_ids = [cat[0] for cat in sorted_categories[:2]]
 
         # -------- Get Careers from Top Categories --------
         careers = Career.objects.filter(
-            category__in=top_categories
+            category__id__in=top_categories_ids
         ).prefetch_related("required_skills")
 
         if not careers.exists():
@@ -927,7 +943,7 @@ def career_quiz(request):
 
         # -------- Prepare User Skills --------
         user_skills = {
-            ss.skill.name.lower(): ss.level
+            ss.skill.name.strip().lower(): ss.level
             for ss in profile.student_skills.select_related("skill")
         }
 
@@ -937,43 +953,55 @@ def career_quiz(request):
         best_skill_score = 0
         skill_gap = []
 
+        # -------- Normalize personality max --------
+        max_personality = max(scores.values()) if scores else 1
+
         # -------- Evaluate Each Career --------
         for career in careers:
 
             # Personality score
-            personality_score = scores.get(career.category, 0)
+            personality_score = scores.get(career.category.id, 0)
+
+            # ✅ Normalize personality (0–100)
+            personality_score_normalized = (personality_score / max_personality) * 100
 
             # Career required skills
             career_skills = {
-                skill.name.lower()
+                skill.name.strip().lower()
                 for skill in career.required_skills.all()
             }
 
-            matched_skills = set(user_skills.keys()) & career_skills
-            skill_score = sum(user_skills[s] for s in matched_skills)
+            if not career_skills:
+                continue
 
-            # Skill Gap
+            # -------- Skill Score (FIXED LOGIC) --------
+            total_skill_score = 0
+
+            for skill in career_skills:
+                level = user_skills.get(skill, 0)
+                total_skill_score += level / 10   # normalize (0–1)
+
+            skill_score = (total_skill_score / len(career_skills)) * 100
+
+            # -------- Skill Gap --------
             career_skill_gap = career_skills - set(user_skills.keys())
 
-            # -------- Weighted Total Score --------
-            total_score = (0.6 * personality_score) + (0.4 * skill_score)
+            # -------- FINAL SCORE (BALANCED AI) --------
+            total_score = (0.5 * personality_score_normalized) + (0.5 * skill_score)
 
             if total_score > best_total_score:
                 best_total_score = total_score
                 best_career = career
-                best_quiz_score = personality_score
-                best_skill_score = skill_score
+                best_quiz_score = round(personality_score_normalized)
+                best_skill_score = round(skill_score)
                 skill_gap = list(career_skill_gap)
 
         if not best_career:
             messages.error(request, "No suitable career found.")
             return redirect("career_quiz")
 
-        # -------- Match Percentage Calculation --------
-        max_personality_score = max(scores.values()) if scores else 0
-        max_skill_score = sum(user_skills.values()) if user_skills else 1
-        max_total = (0.6 * max_personality_score) + (0.4 * max_skill_score)
-        match_percentage = round((best_total_score / max_total) * 100) if max_total else 0
+        # -------- Match Percentage (FINAL FIX) --------
+        match_percentage = round(best_total_score)
 
         # -------- Save / Update Result --------
         CombinedCareerResult.objects.update_or_create(
@@ -983,8 +1011,8 @@ def career_quiz(request):
                 "quiz_score": best_quiz_score,
                 "skill_score": best_skill_score,
                 "total_score": best_total_score,
-                "match_percentage": match_percentage,  # you may need to add this field
-                "skill_gap": skill_gap,  # you may need to add this field as JSONField or TextField
+                "match_percentage": match_percentage,
+                "skill_gap": skill_gap,
             }
         )
 
@@ -1001,7 +1029,6 @@ def career_quiz(request):
     }
 
     return render(request, "accounts/quiz.html", context)
-
 @login_required
 def admin_quiz_list(request):
     questions = CareerQuizQuestion.objects.all()
@@ -1124,32 +1151,32 @@ def skill_based_careers(request):
     })
 
 import subprocess
-@staff_member_required
-def run_migrations(request):
-    core_path = "/opt/render/project/src/AI_Career_Guidance/core"
+# @staff_member_required
+# def run_migrations(request):
+#     core_path = "/opt/render/project/src/AI_Career_Guidance/core"
 
-    # Run all migrations safely
-    result = subprocess.run(
-        ["python", "manage.py", "migrate", "--noinput"],
-        cwd=core_path,
-        capture_output=True,
-        text=True
-    )
+#     # Run all migrations safely
+#     result = subprocess.run(
+#         ["python", "manage.py", "migrate", "--noinput"],
+#         cwd=core_path,
+#         capture_output=True,
+#         text=True
+#     )
 
-    return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
-def create_superuser(request):
-    # Ye secret key ya simple check laga do taki koi aur access na kare
-    if request.GET.get("key") != "mysecret123":
-        return HttpResponse("Not authorized", status=403)
+#     return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
+# def create_superuser(request):
+#     # Ye secret key ya simple check laga do taki koi aur access na kare
+#     if request.GET.get("key") != "mysecret123":
+#         return HttpResponse("Not authorized", status=403)
 
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser(
-            username="admin",
-            email="admin@example.com",
-            password="Admin@123"
-        )
-        return HttpResponse("Superuser created successfully!")
-    return HttpResponse("Superuser already exists.")
+#     if not User.objects.filter(username="admin").exists():
+#         User.objects.create_superuser(
+#             username="admin",
+#             email="admin@example.com",
+#             password="Admin@123"
+#         )
+#         return HttpResponse("Superuser created successfully!")
+#     return HttpResponse("Superuser already exists.")
 
 @login_required
 def admin_categories(request):
@@ -1424,99 +1451,99 @@ def admin_student_profiles(request):
 
 
 
-def import_careers_temp(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
+# def import_careers_temp(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
 
-    # 🔥 PATH AUTO DETECT
-    possible_paths = [
-        os.path.join(settings.BASE_DIR, "core", "data.json"),
-        os.path.join(settings.BASE_DIR, "AI_Career_Guidance", "core", "data.json"),
-        os.path.join(os.getcwd(), "core", "data.json"),
-        os.path.join(os.getcwd(), "AI_Career_Guidance", "core", "data.json"),
-    ]
+#     # 🔥 PATH AUTO DETECT
+#     possible_paths = [
+#         os.path.join(settings.BASE_DIR, "core", "data.json"),
+#         os.path.join(settings.BASE_DIR, "AI_Career_Guidance", "core", "data.json"),
+#         os.path.join(os.getcwd(), "core", "data.json"),
+#         os.path.join(os.getcwd(), "AI_Career_Guidance", "core", "data.json"),
+#     ]
 
-    file_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            file_path = path
-            break
+#     file_path = None
+#     for path in possible_paths:
+#         if os.path.exists(path):
+#             file_path = path
+#             break
 
-    if not file_path:
-        return HttpResponse("❌ data.json file not found!", status=404)
+#     if not file_path:
+#         return HttpResponse("❌ data.json file not found!", status=404)
 
-    # 🔥 LOAD JSON
-    try:
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
-            data = json.load(f)
-    except UnicodeDecodeError:
-        with open(file_path, 'r', encoding='utf-16') as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        return HttpResponse("❌ JSON format invalid!", status=400)
+#     # 🔥 LOAD JSON
+#     try:
+#         with open(file_path, 'r', encoding='utf-8-sig') as f:
+#             data = json.load(f)
+#     except UnicodeDecodeError:
+#         with open(file_path, 'r', encoding='utf-16') as f:
+#             data = json.load(f)
+#     except json.JSONDecodeError:
+#         return HttpResponse("❌ JSON format invalid!", status=400)
 
-    careers = data if isinstance(data, list) else [data]
+#     careers = data if isinstance(data, list) else [data]
 
-    # 🔥 IMPORT LOOP
-    for c in careers:
-        if not isinstance(c, dict):
-            continue
+#     # 🔥 IMPORT LOOP
+#     for c in careers:
+#         if not isinstance(c, dict):
+#             continue
 
-        fields = c.get('fields', {})
+#         fields = c.get('fields', {})
 
-        # ✅ CATEGORY
-        category_name = fields.get('category')
-        category_obj = None
+#         # ✅ CATEGORY
+#         category_name = fields.get('category')
+#         category_obj = None
 
-        if category_name:
-            category_obj, _ = Category.objects.get_or_create(name=category_name)
+#         if category_name:
+#             category_obj, _ = Category.objects.get_or_create(name=category_name)
 
-        # ✅ CAREER
-        career_obj, created = Career.objects.get_or_create(
-            name=fields.get('name', 'Unnamed Career'),
-            defaults={
-                'description': fields.get('description', ''),
-                'category': category_obj,
-                'average_salary': fields.get('average_salary', ''),
-                'future_scope': fields.get('future_scope', ''),
-                'recommended_courses': fields.get('recommended_courses', ''),
-                'roadmap': fields.get('roadmap', ''),
-                'imported_from_json': True,
-            }
-        )
+#         # ✅ CAREER
+#         career_obj, created = Career.objects.get_or_create(
+#             name=fields.get('name', 'Unnamed Career'),
+#             defaults={
+#                 'description': fields.get('description', ''),
+#                 'category': category_obj,
+#                 'average_salary': fields.get('average_salary', ''),
+#                 'future_scope': fields.get('future_scope', ''),
+#                 'recommended_courses': fields.get('recommended_courses', ''),
+#                 'roadmap': fields.get('roadmap', ''),
+#                 'imported_from_json': True,
+#             }
+#         )
 
-        # 🔥 SKILLS (MAIN FIX)
-        skills = fields.get('required_skills', [])
+#         # 🔥 SKILLS (MAIN FIX)
+#         skills = fields.get('required_skills', [])
 
-        for skill_name in skills:
+#         for skill_name in skills:
 
-            skill_obj, created = Skill.objects.get_or_create(name=skill_name)
+#             skill_obj, created = Skill.objects.get_or_create(name=skill_name)
 
-            # 🔥 DIRECT CATEGORY ASSIGN (BEST LOGIC)
-            if category_obj:
-                skill_obj.category = category_obj
-                skill_obj.save()
+#             # 🔥 DIRECT CATEGORY ASSIGN (BEST LOGIC)
+#             if category_obj:
+#                 skill_obj.category = category_obj
+#                 skill_obj.save()
 
-            career_obj.required_skills.add(skill_obj)
+#             career_obj.required_skills.add(skill_obj)
 
-    return HttpResponse("✅ Careers + Skills + Categories imported successfully 🚀")
+#     return HttpResponse("✅ Careers + Skills + Categories imported successfully 🚀")
 
-def delete_json_careers(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
+# def delete_json_careers(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
 
-    # Delete only careers imported from JSON
-    deleted_count, _ = Career.objects.filter(imported_from_json=True).delete()
+#     # Delete only careers imported from JSON
+#     deleted_count, _ = Career.objects.filter(imported_from_json=True).delete()
     
-    return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
+#     return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
 
 
-def delete_all_careers(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
+# def delete_all_careers(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
 
-    deleted_count, _ = Career.objects.all().delete()
-    return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
+#     deleted_count, _ = Career.objects.all().delete()
+#     return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
 
 
 
