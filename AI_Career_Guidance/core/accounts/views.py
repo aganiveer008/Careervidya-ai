@@ -1114,16 +1114,16 @@ def skill_based_careers(request):
     })
 
 from django.db import connection
+import subprocess
 @staff_member_required
 def run_migrations(request):
     core_path = "/opt/render/project/src/AI_Career_Guidance/core"
 
     # ====== Step 1: Fix empty category_id before migration ======
     with connection.cursor() as cursor:
-        cursor.execute("UPDATE accounts_skill SET category_id = NULL WHERE category_id = '';")
+        cursor.execute('UPDATE "accounts_skill" SET "category_id" = NULL WHERE "category_id" = \'\';')
 
     # ====== Step 2: Run migrations ======
-    import subprocess
     result = subprocess.run(
         ["python", "manage.py", "migrate", "--noinput"],
         cwd=core_path,
@@ -1133,7 +1133,6 @@ def run_migrations(request):
 
     # ====== Step 3: Return output ======
     return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
-
 def create_superuser(request):
     # Ye secret key ya simple check laga do taki koi aur access na kare
     if request.GET.get("key") != "mysecret123":
