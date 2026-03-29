@@ -15,10 +15,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-
-
-
-
 GROQ_API_KEY= os.environ.get("GROQ_API_KEY")
 ELEVEN_API_KEY= os.environ.get("ELEVEN_API_KEY")
 GROQ_API= os.environ.get("GROQ_API")

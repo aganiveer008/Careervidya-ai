@@ -1113,21 +1113,25 @@ def skill_based_careers(request):
         'careers': careers
     })
 
+from django.db import connection
 @staff_member_required
 def run_migrations(request):
-    import subprocess
-    import os
-    from django.http import HttpResponse
-
-    # Core folder me jaake migrate run karna
     core_path = "/opt/render/project/src/AI_Career_Guidance/core"
-    
+
+    # ====== Step 1: Fix empty category_id before migration ======
+    with connection.cursor() as cursor:
+        cursor.execute("UPDATE accounts_skill SET category_id = NULL WHERE category_id = '';")
+
+    # ====== Step 2: Run migrations ======
+    import subprocess
     result = subprocess.run(
         ["python", "manage.py", "migrate", "--noinput"],
-        cwd=core_path,            # <--- yahi important hai
+        cwd=core_path,
         capture_output=True,
         text=True
     )
+
+    # ====== Step 3: Return output ======
     return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
 
 def create_superuser(request):
