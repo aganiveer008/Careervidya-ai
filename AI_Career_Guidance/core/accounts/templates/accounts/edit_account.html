@@ -1,150 +1,127 @@
 {% extends 'accounts/base.html' %}
+{% load static %}
 {% block content %}
 
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0f2027] via-[#1c2b35] to-[#2c5364] p-6">
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b0f19] via-[#0f172a] to-[#020617] p-6">
 
-  <div class="w-full max-w-3xl bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl shadow-2xl p-8 md:p-10">
+  <div class="w-full max-w-4xl bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8 md:p-10">
 
     <!-- Heading -->
-    <div class="text-center mb-8">
-      <h2 class="text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
+    <div class="text-center mb-10">
+      <h2 class="text-4xl font-extrabold bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent">
         ✨ Edit Profile
       </h2>
-      <p class="text-white/60 mt-2">
-        Update your personal and academic information
+      <p class="text-white/50 mt-2">
+        Manage your personal & career information
       </p>
     </div>
 
-    <form method="POST" enctype="multipart/form-data" class="space-y-8">
+    <form method="POST" enctype="multipart/form-data" class="space-y-10">
       {% csrf_token %}
 
       <!-- PROFILE IMAGE -->
       <div class="flex flex-col items-center">
 
-        {% if profile.profile_picture %}
-          <img id="profilePreview"
-               src="{{ profile.profile_picture.url }}"
-               class="w-32 h-32 rounded-full object-cover border-4 border-cyan-400 shadow-xl mb-4">
+        <div class="relative group">
 
-          <label class="flex items-center gap-2 text-red-400 text-sm mb-4 cursor-pointer">
-            <input type="checkbox" name="remove_photo" class="accent-red-500">
-            Remove current photo
+          <img id="profilePreview"
+               src="{% if profile.profile_picture %}{{ profile.profile_picture.url }}{% else %}{% static 'default-avatar.png' %}{% endif %}"
+               class="w-32 h-32 rounded-full object-cover border-4 border-cyan-400 shadow-2xl transition group-hover:scale-105">
+
+          <!-- Upload Button -->
+          <label class="absolute bottom-0 right-0 bg-cyan-500 p-2 rounded-full cursor-pointer shadow-lg hover:scale-110 transition">
+            📷
+            <input type="file" name="profile_picture" class="hidden" id="fileInput">
           </label>
 
-        {% else %}
-          <div id="profilePreview"
-               class="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center border border-white/20 mb-4 text-white/50">
-            No Image
-          </div>
-        {% endif %}
+        </div>
 
-        <label class="cursor-pointer bg-cyan-500/20 border border-cyan-400 text-cyan-300 px-4 py-2 rounded-xl text-sm hover:bg-cyan-500/30 transition">
-          Change Photo
-          <input type="file" name="profile_picture" class="hidden">
+        <!-- Remove -->
+        {% if profile.profile_picture %}
+        <label class="flex items-center gap-2 text-red-400 text-sm mt-4 cursor-pointer">
+          <input type="checkbox" name="remove_photo" class="accent-red-500">
+          Remove Photo
         </label>
+        {% endif %}
 
       </div>
 
       <!-- BASIC INFO -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- First Name -->
         <div>
           <label class="text-white/60 text-sm">First Name</label>
           <input type="text" name="first_name" value="{{ user.first_name }}"
-                 class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400">
+                 class="input-style">
         </div>
 
-        <!-- Last Name -->
         <div>
           <label class="text-white/60 text-sm">Last Name</label>
           <input type="text" name="last_name" value="{{ user.last_name }}"
-                 class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400">
+                 class="input-style">
         </div>
 
-        <!-- Email -->
         <div class="md:col-span-2">
           <label class="text-white/60 text-sm">Email</label>
           <input type="email" name="email" value="{{ user.email }}"
-                 class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400">
+                 class="input-style">
         </div>
 
       </div>
 
-      <!-- EDUCATION & STREAM -->
+      <!-- EDUCATION -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <!-- Education Level -->
         <div>
           <label class="text-white/60 text-sm">Education Level</label>
-          <select id="education_level" name="education_level"
-                  class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-black focus:ring-2 focus:ring-cyan-400">
+          <select id="education_level" name="education_level" class="input-style text-black">
             <option value="">Select</option>
-            <option value="10th" {% if profile.education_level|default_if_none:"" == "10th" %}selected{% endif %}>10th</option>
-            <option value="12th" {% if profile.education_level|default_if_none:"" == "12th" %}selected{% endif %}>12th</option>
-            <option value="graduate" {% if profile.education_level|default_if_none:"" == "graduate" %}selected{% endif %}>Graduate</option>
-            <option value="postgraduate" {% if profile.education_level|default_if_none:"" == "postgraduate" %}selected{% endif %}>Post Graduate</option>
+            <option value="10th" {% if profile.education_level == "10th" %}selected{% endif %}>10th</option>
+            <option value="12th" {% if profile.education_level == "12th" %}selected{% endif %}>12th</option>
+            <option value="graduate" {% if profile.education_level == "graduate" %}selected{% endif %}>Graduate</option>
+            <option value="postgraduate" {% if profile.education_level == "postgraduate" %}selected{% endif %}>Post Graduate</option>
           </select>
         </div>
 
-        <!-- Stream -->
         <div id="stream_div">
           <label class="text-white/60 text-sm">Stream</label>
-          <select name="stream"
-                  class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-black focus:ring-2 focus:ring-cyan-400">
+          <select name="stream" class="input-style text-black">
             <option value="">Select</option>
-            <option value="arts" {% if profile.stream|default_if_none:"" == "arts" %}selected{% endif %}>Arts</option>
-            <option value="commerce" {% if profile.stream|default_if_none:"" == "commerce" %}selected{% endif %}>Commerce</option>
-            <option value="medical" {% if profile.stream|default_if_none:"" == "medical" %}selected{% endif %}>Medical</option>
-            <option value="non-medical" {% if profile.stream|default_if_none:"" == "non-medical" %}selected{% endif %}>Non Medical</option>
-            <option value="other" {% if profile.stream|default_if_none:"" == "other" %}selected{% endif %}>Other</option>
+            <option value="arts" {% if profile.stream == "arts" %}selected{% endif %}>Arts</option>
+            <option value="commerce" {% if profile.stream == "commerce" %}selected{% endif %}>Commerce</option>
+            <option value="medical" {% if profile.stream == "medical" %}selected{% endif %}>Medical</option>
+            <option value="non-medical" {% if profile.stream == "non-medical" %}selected{% endif %}>Non Medical</option>
           </select>
         </div>
 
-        <!-- Graduation Field -->
         <div id="grad_div">
           <label class="text-white/60 text-sm">Graduation Field</label>
-          <input type="text" name="graduation_field" value="{{ profile.graduation_field|default_if_none:"" }}"
-                 placeholder="e.g. Computer Science"
-                 class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400">
+          <input type="text" name="graduation_field" value="{{ profile.graduation_field }}" class="input-style">
         </div>
 
-        <!-- Post Graduation Field -->
         <div id="pg_div">
           <label class="text-white/60 text-sm">Post Graduation Field</label>
-          <input type="text" name="post_graduation_field" value="{{ profile.post_graduation_field|default_if_none:"" }}"
-                 placeholder="e.g. AI & ML"
-                 class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400">
+          <input type="text" name="post_graduation_field" value="{{ profile.post_graduation_field }}" class="input-style">
         </div>
 
-        <!-- Location Preference -->
         <div>
           <label class="text-white/60 text-sm">Location Preference</label>
-          <input type="text" name="location_preference" value="{{ profile.location_preference|default_if_none:"" }}"
-                 placeholder="Preferred location"
-                 class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400">
+          <input type="text" name="location_preference" value="{{ profile.location_preference }}" class="input-style">
         </div>
 
-        <!-- Career Interest -->
-        <div>
-          <label class="text-white/60 text-sm">Career Interest</label>
-          <input type="text" name="interest" value="{{ profile.interest|default_if_none:"" }}"
-                 placeholder="e.g. AI, Web Development, Data Science"
-                 class="w-full mt-2 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:ring-2 focus:ring-cyan-400">
-        </div>
-
+        
       </div>
 
       <!-- BUTTONS -->
-      <div class="flex flex-col md:flex-row gap-4 pt-4">
+      <div class="flex gap-4">
 
         <button type="submit"
-                class="w-full md:w-1/2 bg-gradient-to-r from-cyan-400 to-blue-500 py-3 rounded-xl font-semibold text-white shadow-lg hover:scale-105 transition">
+                class="w-1/2 bg-gradient-to-r from-cyan-400 to-blue-500 py-3 rounded-xl font-semibold text-white shadow-lg hover:scale-105 transition">
           💾 Save Changes
         </button>
 
         <a href="{% url 'dashboard' %}"
-           class="w-full md:w-1/2 text-center bg-white/10 border border-white/20 py-3 rounded-xl font-semibold text-white hover:bg-white/20 transition">
+           class="w-1/2 text-center bg-white/10 border border-white/20 py-3 rounded-xl font-semibold text-white hover:bg-white/20 transition">
           Cancel
         </a>
 
@@ -156,7 +133,25 @@
 
 </div>
 
+<!-- 🔥 JS -->
 <script>
+  const fileInput = document.getElementById("fileInput");
+  const preview = document.getElementById("profilePreview");
+
+  fileInput.addEventListener("change", function () {
+    const file = this.files[0];
+
+    if (file) {
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    }
+  });
+
   const eduSelect = document.getElementById("education_level");
   const streamDiv = document.getElementById("stream_div");
   const gradDiv = document.getElementById("grad_div");
@@ -164,30 +159,33 @@
 
   function updateEducationFields() {
     const val = eduSelect.value;
-    if (val === "10th" || val === "12th") {
-      streamDiv.classList.remove("hidden");
-      gradDiv.classList.add("hidden");
-      pgDiv.classList.add("hidden");
-    } else if (val === "graduate") {
-      streamDiv.classList.add("hidden");
-      gradDiv.classList.remove("hidden");
-      pgDiv.classList.add("hidden");
-    } else if (val === "postgraduate") {
-      streamDiv.classList.add("hidden");
-      gradDiv.classList.remove("hidden");
-      pgDiv.classList.remove("hidden");
-    } else {
-      streamDiv.classList.add("hidden");
-      gradDiv.classList.add("hidden");
-      pgDiv.classList.add("hidden");
-    }
+
+    streamDiv.classList.toggle("hidden", !(val === "10th" || val === "12th"));
+    gradDiv.classList.toggle("hidden", !(val === "graduate" || val === "postgraduate"));
+    pgDiv.classList.toggle("hidden", val !== "postgraduate");
   }
 
-  // On page load
   updateEducationFields();
-
-  // On change
   eduSelect.addEventListener("change", updateEducationFields);
 </script>
+
+<!-- 🔥 INPUT STYLE -->
+<style>
+  .input-style {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    outline: none;
+  }
+
+  .input-style:focus {
+    border-color: #22d3ee;
+    box-shadow: 0 0 0 2px rgba(34,211,238,0.3);
+  }
+</style>
 
 {% endblock %}

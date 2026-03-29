@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 
 
 
+
 GROQ_API_KEY= os.environ.get("GROQ_API_KEY")
 ELEVEN_API_KEY= os.environ.get("ELEVEN_API_KEY")
 GROQ_API= os.environ.get("GROQ_API")
@@ -203,7 +204,7 @@ SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 
 DEFAULT_FROM_EMAIL = "patyaldeepanshu05@gmail.com"
 SITE_ID = int(os.environ.get("SITE_ID", 1))
-
+# SITE_ID = 2
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
     'allauth.account.auth_backends.AuthenticationBackend',

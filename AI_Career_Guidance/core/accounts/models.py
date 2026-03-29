@@ -1,11 +1,21 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
 # =========================
 # Skills
 # =========================
 class Skill(models.Model):
     name = models.CharField(max_length=100)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -61,15 +71,6 @@ class StudentSkill(models.Model):
         return f"{self.student.user.username} - {self.skill.name} ({self.level})"
 
 
-# =========================
-# Career Category
-# =========================
-class Category(models.Model):
-    name = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-
-    def __str__(self):
-        return self.name
 
 
 # =========================

@@ -39,7 +39,7 @@ from captcha.helpers import captcha_image_url
 from captcha.models import CaptchaStore
 from django.core.mail import send_mail
 from django.http import JsonResponse
-
+import random
 
 
 @never_cache
@@ -47,130 +47,109 @@ from django.http import JsonResponse
 def dashboard(request):
     profile, created = StudentProfile.objects.get_or_create(user=request.user)
 
-    combined_result = CombinedCareerResult.objects.filter(
-        student=profile
-    ).order_by("-created_at").first()
+    # ================= INTEREST NAME =================
+    interest_name = None
+    if profile.interest:
+        category = Category.objects.filter(id=profile.interest).first()
+        if category:
+            interest_name = category.name
 
-    top_career = combined_result.suggested_career if combined_result else None
+    # ================= QUIZ RESULT (MAIN SOURCE) =================
+    result = CombinedCareerResult.latest_for_student(profile)
 
-    all_careers = []
-    quiz_scores = {}
-    match_percentage = None
-    skill_gap = []
+    top_career = None
+    top_careers_with_gap = []
+    match_percentage = 0
 
-    # 🔥 CHART DATA
-    chart_labels = []
-    chart_required = []
-    chart_user = []
+    # 🔥 ONLY SHOW IF QUIZ DONE
+    if result:
+        top_career = result.suggested_career
+        match_percentage = result.match_percentage or 0
 
-    # ================= CAREER LOGIC =================
-    if combined_result and top_career:
+        # 🔥 Top career + 2 random similar (optional)
+        careers = Career.objects.filter(
+            category=top_career.category
+        ).exclude(id=top_career.id)[:2]
 
-        # USER SKILLS
+        all_careers = [(top_career, match_percentage)]
+        for c in careers:
+            all_careers.append((c, 50))  # dummy score for UI
+
+        # 🔥 USER SKILLS
         user_skills = {
-            ss.skill.name.lower(): ss.level
+            ss.skill.name.strip().lower(): ss.level
             for ss in profile.student_skills.select_related("skill")
         }
 
-        # CAREER SKILLS
-        career_skills_qs = top_career.required_skills.all()
+        for career, score in all_careers:
+            career_skills = {
+                s.name.strip().lower() for s in career.required_skills.all()
+            }
 
-        career_skills = {
-            skill.name.lower() for skill in career_skills_qs
-        }
+            gap = list(career_skills - set(user_skills.keys()))
 
-        # MATCH + GAP
-        matched_skills = set(user_skills.keys()) & career_skills
-        current_skill_score = sum(user_skills[s] for s in matched_skills)
-
-        current_skill_gap = list(career_skills - set(user_skills.keys()))
-
-        quiz_score = combined_result.quiz_score
-
-        total_score = (0.6 * quiz_score) + (0.4 * current_skill_score)
-
-        max_skill_score = (len(career_skills) * 5) if career_skills else 1
-        max_total = (0.6 * 100) + (0.4 * max_skill_score)
-
-        match_percentage = round((total_score / max_total) * 100) if max_total else 0
-
-        quiz_scores = {
-            "Quiz Score": quiz_score,
-            "Skill Score": current_skill_score,
-        }
-
-        skill_gap = current_skill_gap
-        all_careers.append((top_career, total_score))
-
-        # ================= 🔥 CHART LOGIC =================
-        for skill in career_skills_qs:
-            name = skill.name
-
-            required_level = getattr(skill, "market_demand", 75)
-
-            raw_level = user_skills.get(name.lower(), 0)
-
-            if raw_level == 0:
-                user_level = 10
-            elif raw_level == 1:
-                user_level = 25
-            elif raw_level == 2:
-                user_level = 45
-            elif raw_level == 3:
-                user_level = 60
-            elif raw_level == 4:
-                user_level = 80
-            else:
-                user_level = 95
-
-            chart_labels.append(name)
-            chart_required.append(required_level)
-            chart_user.append(user_level)
+            top_careers_with_gap.append({
+                "career": career,
+                "score": score,
+                "gap": gap
+            })
 
     # ================= PROFILE COMPLETION =================
     completion = 0
 
     if profile.profile_picture:
-        completion += 15
-
-    if (profile.interest or "").strip():
-        completion += 15
-
-    if (profile.education_level or "").strip():
-        completion += 15
-
-    if (profile.stream or "").strip():
-        completion += 15
-
-    if profile.education_level in ["graduate", "postgraduate"]:
-        if profile.graduation_field:
-            completion += 10
-    else:
-        completion += 10
-
-    if (profile.location_preference or "").strip():
-        completion += 10
-
+        completion += 20
+    if request.user.first_name:
+        completion += 20
+    if request.user.last_name:
+        completion += 20
     if profile.student_skills.exists():
-        completion += 10
-
-    if combined_result and combined_result.suggested_career:
-        completion += 10
+        completion += 20
+    if profile.education_level:
+        completion += 20
 
     completion = min(completion, 100)
 
-    # ================= FINAL =================
+    # ================= PROFILE COMPLETE CHECK =================
+    profile_completed = (
+        request.user.first_name and
+        request.user.last_name and
+        profile.profile_picture and
+        profile.student_skills.exists()
+    )
+
+    # ================= QUIZ STATUS =================
+    has_taken_quiz = result is not None
+
+    # ✅ Backend: only career required skills
+    chart_labels = []
+    chart_required = []
+    chart_user = []
+
+    if top_career:
+        for skill in top_career.required_skills.all():
+            chart_labels.append(skill.name.strip())
+            chart_required.append(80)  # Market demand
+
+            # Check if user has this skill
+            if profile.student_skills.filter(skill=skill).exists():
+                chart_user.append(80)  # User has skill → full green
+            else:
+                chart_user.append(0) 
     return render(request, "accounts/dashboard.html", {
         "profile": profile,
+        "interest_name": interest_name,
+
         "career": top_career,
-        "career_result": combined_result,
-        "all_careers": all_careers,
-        "quiz_scores": quiz_scores,
+        "top_careers_with_gap": top_careers_with_gap,
+
+        "has_taken_quiz": has_taken_quiz,
+        "profile_completed": profile_completed,
+
         "match_percentage": match_percentage,
-        "skill_gap": skill_gap,
         "completion": completion,
 
-        # 🔥 CHART
+        # chart disable (jab tak stable na ho)
         "chart_labels": chart_labels,
         "chart_required": chart_required,
         "chart_user": chart_user,
@@ -204,21 +183,21 @@ def edit_account(request):
         profile.graduation_field = request.POST.get("graduation_field")
         profile.post_graduation_field = request.POST.get("post_graduation_field")
         profile.location_preference = request.POST.get("location_preference")
-        profile.interest = request.POST.get("interest")
+
+        # ❌ INTEREST REMOVED
 
         # ---------------- Profile Picture ----------------
         if request.POST.get("remove_photo"):
             if profile.profile_picture:
-                profile.profile_picture.delete(save=False)
+                profile.profile_picture.delete(save=True)
             profile.profile_picture = None
 
         if request.FILES.get("profile_picture"):
-            if profile.profile_picture:
-                profile.profile_picture.delete(save=False)
             profile.profile_picture = request.FILES["profile_picture"]
 
         user.save()
         profile.save()
+
         messages.success(request, "Account updated successfully!")
         return redirect("dashboard")
 
@@ -499,6 +478,7 @@ def register_view(request):
 def edit_profile(request):
     profile = StudentProfile.objects.get(user=request.user)
     skills = Skill.objects.all()
+    categories = Category.objects.all()
 
     if request.method == "POST":
         profile.interest = request.POST.get("interest", "")
@@ -559,38 +539,44 @@ def edit_profile(request):
     return render(request, "accounts/edit_profile.html", {
         "profile": profile,
         "skills": skills,
+        "categories" : categories,
         "student_skill_ids": student_skill_ids,
     })
 
-def calculate_combined_career(profile, quiz_result=None):
-    # Skill Score
-    user_skills = {ss.skill.name.lower(): ss.level for ss in profile.student_skills.select_related("skill").all()}
+def calculate_combined_career(profile):
+
+    user_skills = {
+        ss.skill.name.strip().lower(): ss.level
+        for ss in profile.student_skills.select_related("skill")
+    }
+
     career_scores = []
+
     for career in Career.objects.prefetch_related("required_skills").all():
-        career_skills = {skill.name.lower() for skill in career.required_skills.all()}
-        matched = set(user_skills.keys()) & career_skills
-        if matched:
-            score = sum(user_skills[s] for s in matched)  # skill levels included
-            career_scores.append((career, score))
+
+        career_skills = {
+            skill.name.strip().lower()
+            for skill in career.required_skills.all()
+        }
+
+        if not career_skills:
+            continue
+
+        max_score = len(career_skills) * 5
+        user_score = sum(user_skills.get(skill, 0) for skill in career_skills)
+        skill_percentage = (user_score / max_score) * 100 if max_score else 0
+
+        # ❌ QUIZ REMOVE (already calculated earlier)
+        final_score = round(skill_percentage)
+
+        career_scores.append((career, final_score))
+
     career_scores.sort(key=lambda x: x[1], reverse=True)
 
-    # Quiz Score
-    if quiz_result:
-        quiz_scores = {}
-        for answer in getattr(quiz_result, "answers", []):
-            cat = getattr(answer, "category", None)
-            score = getattr(answer, "score", 0)
-            if cat:
-                quiz_scores[cat] = quiz_scores.get(cat, 0) + score
-
-        if quiz_scores:
-            top_cat = max(quiz_scores, key=quiz_scores.get)
-            top_career = Career.objects.filter(category=top_cat).first()
-            return top_career, career_scores, quiz_scores
-
     top_career = career_scores[0][0] if career_scores else None
-    return top_career, career_scores, {}
 
+    return top_career, career_scores, {}
+   
 @login_required
 def career_detail(request, career_id):
     career = get_object_or_404(Career, id=career_id)
@@ -1127,36 +1113,36 @@ def skill_based_careers(request):
         'careers': careers
     })
 
-# @staff_member_required
-# def run_migrations(request):
-#     import subprocess
-#     import os
-#     from django.http import HttpResponse
+@staff_member_required
+def run_migrations(request):
+    import subprocess
+    import os
+    from django.http import HttpResponse
 
-#     # Core folder me jaake migrate run karna
-#     core_path = "/opt/render/project/src/AI_Career_Guidance/core"
+    # Core folder me jaake migrate run karna
+    core_path = "/opt/render/project/src/AI_Career_Guidance/core"
     
-#     result = subprocess.run(
-#         ["python", "manage.py", "migrate", "--noinput"],
-#         cwd=core_path,            # <--- yahi important hai
-#         capture_output=True,
-#         text=True
-#     )
-#     return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
+    result = subprocess.run(
+        ["python", "manage.py", "migrate", "--noinput"],
+        cwd=core_path,            # <--- yahi important hai
+        capture_output=True,
+        text=True
+    )
+    return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
 
-# def create_superuser(request):
-#     # Ye secret key ya simple check laga do taki koi aur access na kare
-#     if request.GET.get("key") != "mysecret123":
-#         return HttpResponse("Not authorized", status=403)
+def create_superuser(request):
+    # Ye secret key ya simple check laga do taki koi aur access na kare
+    if request.GET.get("key") != "mysecret123":
+        return HttpResponse("Not authorized", status=403)
 
-#     if not User.objects.filter(username="admin").exists():
-#         User.objects.create_superuser(
-#             username="admin",
-#             email="admin@example.com",
-#             password="Admin@123"
-#         )
-#         return HttpResponse("Superuser created successfully!")
-#     return HttpResponse("Superuser already exists.")
+    if not User.objects.filter(username="admin").exists():
+        User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="Admin@123"
+        )
+        return HttpResponse("Superuser created successfully!")
+    return HttpResponse("Superuser already exists.")
 
 @login_required
 def admin_categories(request):
@@ -1431,96 +1417,99 @@ def admin_student_profiles(request):
 
 
 
-# def import_careers_temp(request):
-#     if not request.user.is_superuser:
-#         return HttpResponse("❌ Not authorized", status=403)
+def import_careers_temp(request):
+    if not request.user.is_superuser:
+        return HttpResponse("❌ Not authorized", status=403)
 
-#     # 🔥 AUTO-DETECT PATH (no confusion)
-#     possible_paths = [
-#         os.path.join(settings.BASE_DIR, "core", "data.json"),
-#         os.path.join(settings.BASE_DIR, "AI_Career_Guidance", "core", "data.json"),
-#         os.path.join(os.getcwd(), "core", "data.json"),
-#         os.path.join(os.getcwd(), "AI_Career_Guidance", "core", "data.json"),
-#     ]
+    # 🔥 PATH AUTO DETECT
+    possible_paths = [
+        os.path.join(settings.BASE_DIR, "core", "data.json"),
+        os.path.join(settings.BASE_DIR, "AI_Career_Guidance", "core", "data.json"),
+        os.path.join(os.getcwd(), "core", "data.json"),
+        os.path.join(os.getcwd(), "AI_Career_Guidance", "core", "data.json"),
+    ]
 
-#     file_path = None
-#     for path in possible_paths:
-#         if os.path.exists(path):
-#             file_path = path
-#             break
+    file_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            file_path = path
+            break
 
-#     if not file_path:
-#         return HttpResponse("❌ data.json file not found!", status=404)
+    if not file_path:
+        return HttpResponse("❌ data.json file not found!", status=404)
 
-#     # Load JSON safely
-#     try:
-#         with open(file_path, 'r', encoding='utf-8-sig') as f:
-#             data = json.load(f)
-#     except UnicodeDecodeError:
-#         with open(file_path, 'r', encoding='utf-16') as f:
-#             data = json.load(f)
-#     except json.JSONDecodeError:
-#         return HttpResponse("❌ JSON format is invalid!", status=400)
+    # 🔥 LOAD JSON
+    try:
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
+            data = json.load(f)
+    except UnicodeDecodeError:
+        with open(file_path, 'r', encoding='utf-16') as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        return HttpResponse("❌ JSON format invalid!", status=400)
 
-#     # Ensure list
-#     if isinstance(data, dict):
-#         careers = [data]
-#     elif isinstance(data, list):
-#         careers = data
-#     else:
-#         return HttpResponse("❌ Invalid JSON structure!", status=400)
+    careers = data if isinstance(data, list) else [data]
 
-#     # Import data
-#     for c in careers:
-#         if not isinstance(c, dict):
-#             continue
+    # 🔥 IMPORT LOOP
+    for c in careers:
+        if not isinstance(c, dict):
+            continue
 
-#         fields = c.get('fields', {})
+        fields = c.get('fields', {})
 
-#         # Category
-#         category_name = fields.get('category')
-#         category_obj = None
-#         if category_name:
-#             category_obj, _ = Category.objects.get_or_create(name=category_name)
+        # ✅ CATEGORY
+        category_name = fields.get('category')
+        category_obj = None
 
-#         # Career
-#         career_obj, created = Career.objects.get_or_create(
-#             name=fields.get('name', 'Unnamed Career'),
-#             defaults={
-#                 'description': fields.get('description', ''),
-#                 'category': category_obj,
-#                 'average_salary': fields.get('average_salary', ''),
-#                 'future_scope': fields.get('future_scope', ''),
-#                 'recommended_courses': fields.get('recommended_courses', ''),
-#                 'roadmap': fields.get('roadmap', ''),
-#                 'imported_from_json': True,
-#             }
-#         )
+        if category_name:
+            category_obj, _ = Category.objects.get_or_create(name=category_name)
 
-#         # Skills
-#         skills = fields.get('required_skills', [])
-#         for skill_name in skills:
-#             skill_obj, _ = Skill.objects.get_or_create(name=skill_name)
-#             career_obj.required_skills.add(skill_obj)
+        # ✅ CAREER
+        career_obj, created = Career.objects.get_or_create(
+            name=fields.get('name', 'Unnamed Career'),
+            defaults={
+                'description': fields.get('description', ''),
+                'category': category_obj,
+                'average_salary': fields.get('average_salary', ''),
+                'future_scope': fields.get('future_scope', ''),
+                'recommended_courses': fields.get('recommended_courses', ''),
+                'roadmap': fields.get('roadmap', ''),
+                'imported_from_json': True,
+            }
+        )
 
-#     return HttpResponse("✅ Careers imported successfully!")
+        # 🔥 SKILLS (MAIN FIX)
+        skills = fields.get('required_skills', [])
 
-# def delete_json_careers(request):
-#     if not request.user.is_superuser:
-#         return HttpResponse("❌ Not authorized", status=403)
+        for skill_name in skills:
 
-#     # Delete only careers imported from JSON
-#     deleted_count, _ = Career.objects.filter(imported_from_json=True).delete()
+            skill_obj, created = Skill.objects.get_or_create(name=skill_name)
+
+            # 🔥 DIRECT CATEGORY ASSIGN (BEST LOGIC)
+            if category_obj:
+                skill_obj.category = category_obj
+                skill_obj.save()
+
+            career_obj.required_skills.add(skill_obj)
+
+    return HttpResponse("✅ Careers + Skills + Categories imported successfully 🚀")
+
+def delete_json_careers(request):
+    if not request.user.is_superuser:
+        return HttpResponse("❌ Not authorized", status=403)
+
+    # Delete only careers imported from JSON
+    deleted_count, _ = Career.objects.filter(imported_from_json=True).delete()
     
-#     return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
+    return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
 
 
-# def delete_all_careers(request):
-#     if not request.user.is_superuser:
-#         return HttpResponse("❌ Not authorized", status=403)
+def delete_all_careers(request):
+    if not request.user.is_superuser:
+        return HttpResponse("❌ Not authorized", status=403)
 
-#     deleted_count, _ = Career.objects.all().delete()
-#     return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
+    deleted_count, _ = Career.objects.all().delete()
+    return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
 
 
 

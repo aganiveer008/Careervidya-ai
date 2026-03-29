@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import (
+    CombinedCareerResult,
     Skill,
     StudentProfile,
     StudentSkill,
@@ -97,26 +98,29 @@ class CareerQuizQuestionAdmin(admin.ModelAdmin):
     list_display = ("question",)
     search_fields = ("question",)
 
+@admin.register(CombinedCareerResult)
+class CombinedCareerResultAdmin(admin.ModelAdmin):
+    list_display = ("student", "suggested_career", "match_percentage", "created_at")
 
 # =========================
 # Quiz Result Admin
 # =========================
-@admin.register(CareerQuizResult)
-class CareerQuizResultAdmin(admin.ModelAdmin):
-    # Sirf existing model fields + admin methods
-    list_display = ('user', 'get_quiz_date', 'suggested_career', 'total_score')
-    search_fields = ('user__username', 'user__email')
+# @admin.register(CareerQuizResult)
+# class CareerQuizResultAdmin(admin.ModelAdmin):
+#     # Sirf existing model fields + admin methods
+#     list_display = ('user', 'get_quiz_date', 'suggested_career', 'total_score')
+#     search_fields = ('user__username', 'user__email')
 
-    # agar model me quiz_date nahi hai, hum admin me define kar rahe hain
-    def get_quiz_date(self, obj):
-        # agar model me created_at ya timestamp field hai to use karo
-        return getattr(obj, 'created_at', "N/A")
-    get_quiz_date.short_description = "Quiz Date"
+#     # agar model me quiz_date nahi hai, hum admin me define kar rahe hain
+#     def get_quiz_date(self, obj):
+#         # agar model me created_at ya timestamp field hai to use karo
+#         return getattr(obj, 'created_at', "N/A")
+#     get_quiz_date.short_description = "Quiz Date"
 
-    def suggested_career(self, obj):
-        return obj.top_career.name if getattr(obj, 'top_career', None) else "N/A"
-    suggested_career.short_description = "Suggested Career"
+#     def suggested_career(self, obj):
+#         return obj.top_career.name if getattr(obj, 'top_career', None) else "N/A"
+#     suggested_career.short_description = "Suggested Career"
 
-    def total_score(self, obj):
-        return getattr(obj, 'score', "N/A")
-    total_score.short_description = "Total Score"
+#     def total_score(self, obj):
+#         return getattr(obj, 'score', "N/A")
+#     total_score.short_description = "Total Score"

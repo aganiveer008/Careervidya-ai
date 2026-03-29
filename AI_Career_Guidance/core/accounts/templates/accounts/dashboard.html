@@ -39,11 +39,8 @@
           <p class="text-sm text-white/50">Add your name & profile details</p>
         </div>
         <span class="text-green-400 font-bold">
-{% if request.user.first_name and request.user.last_name and profile.profile_picture and profile.interest and profile.student_skills.exists %}
-  ✔
-{% else %}
-  ➜
-{% endif %}        </span>
+{% if profile_completed %}✔{% else %}➜{% endif %}
+       </span>
       </div>
 
       <!-- STEP 2 -->
@@ -53,7 +50,7 @@
           <p class="text-sm text-white/50">Tell us what you know</p>
         </div>
         <span class="text-green-400 font-bold">
-          {% if profile.student_skills.exists %}✔{% else %}➜{% endif %}
+          {% if profile.student_skills.all %}✔{% else %}➜{% endif %}
         </span>
       </div>
 
@@ -75,7 +72,7 @@
           <p class="text-sm text-white/50">Get AI-based recommendation</p>
         </div>
         <span class="text-green-400 font-bold">
-          {% if career_result %}✔{% else %}➜{% endif %}
+          {% if has_taken_quiz %}✔{% else %}➜{% endif %}
         </span>
       </div>
 
@@ -121,7 +118,7 @@
         <h3 class="text-lg font-semibold mb-4">🎯 Skills & Quiz</h3>
 
         <p class="text-white/50 text-sm">Interest</p>
-        <p class="text-green-300 mb-4">{{ profile.interest|default:"Not set" }}</p>
+        <p class="text-green-300 mb-4">{{ interest_name|default:"Not set" }}</p>
 
         <div class="flex flex-wrap gap-2 mb-4">
           {% for ss in profile.student_skills.all %}
@@ -138,22 +135,31 @@
           Update Skills
         </a>
 
-        <!-- QUIZ -->
-        {% if not career_result %}
-          {% if profile.student_skills.exists and profile.interest %}
-            <a href="{% url 'career_quiz' %}">
-              <button class="w-full bg-gradient-to-r from-cyan-400 to-blue-500 py-2 rounded-xl text-sm hover:scale-105 transition">
-                🚀 Take Quiz
-              </button>
-            </a>
-          {% else %}
-            <button class="w-full bg-gray-600 py-2 rounded-xl text-sm cursor-not-allowed">
-              🔒 Unlock Quiz
-            </button>
-          {% endif %}
-        {% else %}
-          <p class="text-green-400 text-center text-sm font-semibold">✅ Completed</p>
-        {% endif %}
+        <!-- QUIZ BUTTON LOGIC -->
+
+{% if not has_taken_quiz %}
+
+  {% if profile.student_skills.exists and profile.interest %}
+    <a href="{% url 'career_quiz' %}">
+      <button class="w-full bg-gradient-to-r from-cyan-400 to-blue-500 py-2 rounded-xl text-sm hover:scale-105 transition">
+        🚀 Take Quiz
+      </button>
+    </a>
+  {% else %}
+    <button class="w-full bg-gray-600 py-2 rounded-xl text-sm cursor-not-allowed">
+      🔒 Complete Profile to Unlock Quiz
+    </button>
+  {% endif %}
+
+{% else %}
+
+  <div class="w-full bg-green-500/10 border border-green-400/30 py-2 rounded-xl text-center">
+    <p class="text-green-400 text-sm font-semibold">
+      ✅ Quiz Completed
+    </p>
+  </div>
+
+{% endif %}
 
       </div>
 
@@ -180,40 +186,105 @@
     <div class="max-w-7xl mx-auto mb-10">
       <div class="group relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 transition duration-500 hover:scale-[1.02] hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(168,85,247,0.5)]">
 
-        <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">🤖 AI Career Insight</h3>
+        
+      <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+  🤖 AI Career Insight
+</h3>
 
-        {% if career %}
-          <p class="text-white/50 text-sm">Top Match</p>
+{% if has_taken_quiz and profile.student_skills.exists %}
+  <p class="text-white/50 text-sm mb-4">Top Career Matches</p>
 
-          <a href="{% url 'career_detail' career.id %}" 
-             class="text-4xl md:text-5xl font-extrabold text-green-400 mt-2 inline-block hover:scale-105 transition">
-            {{ career.name }}
-          </a>
+  {% for item in top_careers_with_gap %}
 
-          {% if match_percentage %}
-            <p class="mt-3 text-white/70 text-lg">
-              Match Score:
-              <span class="text-green-400 font-bold">{{ match_percentage }}%</span>
-            </p>
-          {% endif %}
+    <!-- 🥇 TOP CAREER -->
+    {% if forloop.first %}
+      <div class="mb-6 p-6 bg-gradient-to-r from-green-500/20 to-emerald-400/10 border border-green-400/30 rounded-2xl shadow-lg scale-105">
 
-          {% if skill_gap %}
-            <div class="mt-5">
-              <p class="text-white/50 text-sm mb-2">Skills to Improve</p>
-              <div class="flex flex-wrap gap-2">
-                {% for skill in skill_gap %}
-                  <span class="px-3 py-1 text-xs bg-purple-400/20 border border-purple-400 rounded-full">
-                    {{ skill }}
-                  </span>
-                {% endfor %}
-              </div>
-            </div>
-          {% endif %}
+        <span class="text-xs bg-green-400 text-black px-3 py-1 rounded-full font-semibold">
+          🥇 Best Match
+        </span>
 
-        {% else %}
-          <p class="text-red-400">No AI recommendation yet 🚧</p>
-        {% endif %}
+        <a href="{% url 'career_detail' item.career.id %}" 
+           class="block text-5xl font-extrabold text-green-300 mt-3 hover:scale-105 transition">
+          {{ item.career.name }}
+        </a>
 
+        <p class="text-sm text-white/70 mt-2">
+          Match Score: <span class="text-green-400 font-bold">{{ item.score }}%</span>
+        </p>
+
+        <!-- Skill Gap -->
+        <p class="text-xs text-white/50">Required Skills:</p>
+
+<div class="flex flex-wrap gap-2">
+  {% for skill in item.career.required_skills.all %}
+    <span class="text-xs bg-white/10 px-2 py-1 rounded">
+      {{ skill.name }}
+    </span>
+  {% endfor %}
+</div>
+
+<!-- GAP -->
+{% if item.gap %}
+  <p class="text-red-400 text-xs mt-2">⚠️ Missing skills:</p>
+  <div class="flex flex-wrap gap-2">
+    {% for skill in item.gap %}
+      <span class="text-xs bg-red-400/20 px-2 py-1 rounded">
+        {{ skill }}
+      </span>
+    {% endfor %}
+  </div>
+{% endif %}
+
+      </div>
+
+    <!-- 🥈🥉 SECONDARY CAREERS -->
+    {% else %}
+      <div class="mb-4 p-4 bg-white/5 border border-white/10 rounded-xl opacity-80 hover:opacity-100 transition">
+
+        <span class="text-xs text-yellow-400">
+          {% if forloop.counter == 2 %}🥈 Good Match{% else %}🥉 Also Consider{% endif %}
+        </span>
+
+        <a href="{% url 'career_detail' item.career.id %}" 
+           class="block text-3xl font-bold text-white mt-1 hover:text-green-400 transition">
+          {{ item.career.name }}
+        </a>
+
+        <p class="text-sm text-white/60">
+          Match Score: {{ item.score }}%
+        </p>
+
+        <p class="text-xs text-white/50">Required Skills:</p>
+
+<div class="flex flex-wrap gap-2">
+  {% for skill in item.career.required_skills.all %}
+    <span class="text-xs bg-white/10 px-2 py-1 rounded">
+      {{ skill.name }}
+    </span>
+  {% endfor %}
+</div>
+
+<!-- GAP -->
+{% if item.gap %}
+  <p class="text-red-400 text-xs mt-2">⚠️ Missing skills:</p>
+  <div class="flex flex-wrap gap-2">
+    {% for skill in item.gap %}
+      <span class="text-xs bg-red-400/20 px-2 py-1 rounded">
+        {{ skill }}
+      </span>
+    {% endfor %}
+  </div>
+{% endif %}
+
+      </div>
+    {% endif %}
+
+  {% endfor %}
+
+{% else %}
+  <p class="text-red-400">Complete skills + quiz to see AI recommendation 🚧</p>
+{% endif %}
       </div>
 
 
@@ -243,86 +314,67 @@
 </div>
 {% endif %}
 
+<canvas id="skillChart" width="600" height="300"></canvas>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const labels = {{ chart_labels|safe }};
-const requiredData = {{ chart_required|safe }};
-const userData = {{ chart_user|safe }};
+window.onload = function() {
+    // ================= DATA =================
+    const labels = {{ chart_labels|safe }};
+    const requiredData = {{ chart_required|safe }};
+    const userData = {{ chart_user|safe }};
 
-// ✅ FIX 1: DO NOT SCALE DATA (backend already correct)
-const marketData = requiredData;
+    // Make missing skills visible (min height 5)
+    const userDataVisible = userData.map(v => v === 0 ? 5 : v);
 
-// ✅ FIX 2: make 0 visible (else invisible bar)
-const userDataVisible = userData.map(val => val === 0 ? 5 : val);
+    // Colors aligned with visible data
+    const userColors = userData.map(v => v === 0 ? "rgba(239,68,68,0.9)" : "rgba(34,197,94,0.9)");
+    const requiredColors = requiredData.map(_ => "rgba(168,85,247,0.5)"); // Purple
 
-// ✅ FIX 3: correct color logic (based on REAL values, not scaled)
-const userColors = userData.map((val, i) => {
-  const gap = requiredData[i] - val;
-
-  if (val === 0) return "rgba(239,68,68,1)";      // pure red (weak)
-  if (gap > 50) return "rgba(239,68,68,0.9)";     // red
-  return "rgba(34,197,94,0.9)";                   // green
-});
-
-const ctx = document.getElementById('skillChart');
-
-new Chart(ctx, {
-  type: 'bar',
-  data: {
-    labels: labels,
-    datasets: [
-      {
-        label: 'Market Demand',
-        data: marketData,
-        backgroundColor: 'rgba(168,85,247,0.5)',
-        borderRadius: 8
-      },
-      {
-        label: 'Your Skills',
-        data: userDataVisible,
-        backgroundColor: userColors,
-        borderRadius: 8
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    plugins: {
-      legend: {
-        labels: { color: "#e5e7eb" }
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context) {
-            const idx = context.dataIndex;
-            const label = context.dataset.label;
-
-            if(label === 'Market Demand') {
-              return `Market: ${requiredData[idx]}`;
+    // ================= CHART =================
+    const ctx = document.getElementById('skillChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Market Demand',
+                    data: requiredData,
+                    backgroundColor: requiredColors,
+                    borderRadius: 8
+                },
+                {
+                    label: 'Your Skills',
+                    data: userDataVisible,
+                    backgroundColor: userColors,
+                    borderRadius: 8
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { labels: { color: "#e5e7eb" } },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const idx = context.dataIndex;
+                            if(context.dataset.label === 'Market Demand') {
+                                return `Market: ${requiredData[idx]}`;
+                            }
+                            const val = userData[idx];
+                            return val === 0 ? "You: 0 (Missing)" : `You: ${val} (Selected)`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { ticks: { color: "#cbd5e1" }, grid: { color: "rgba(255,255,255,0.05)" } },
+                y: { ticks: { color: "#cbd5e1" }, grid: { color: "rgba(255,255,255,0.08)" }, max: 100 }
             }
-
-            const val = userData[idx];
-
-            if (val === 0) return "You: 0 (Weak)";
-            if (val <= 40) return `You: ${val} (Weak)`;
-            if (val <= 75) return `You: ${val} (Average)`;
-            return `You: ${val} (Strong)`;
-          }
         }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { color: "#cbd5e1" },
-        grid: { color: "rgba(255,255,255,0.05)" }
-      },
-      y: {
-        ticks: { color: "#cbd5e1" },
-        grid: { color: "rgba(255,255,255,0.08)" },
-        max: 100
-      }
-    }
-  }
-});
+    });
+}
 </script>
 {% endblock %}
