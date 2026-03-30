@@ -1162,33 +1162,33 @@ def skill_based_careers(request):
         'careers': careers
     })
 
-import subprocess
-@staff_member_required
-def run_migrations(request):
-    core_path = "/opt/render/project/src/AI_Career_Guidance/core"
+# import subprocess
+# @staff_member_required
+# def run_migrations(request):
+#     core_path = "/opt/render/project/src/AI_Career_Guidance/core"
 
-    # Run all migrations safely
-    result = subprocess.run(
-        ["python", "manage.py", "migrate", "--noinput"],
-        cwd=core_path,
-        capture_output=True,
-        text=True
-    )
+#     # Run all migrations safely
+#     result = subprocess.run(
+#         ["python", "manage.py", "migrate", "--noinput"],
+#         cwd=core_path,
+#         capture_output=True,
+#         text=True
+#     )
 
-    return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
-def create_superuser(request):
-    # Ye secret key ya simple check laga do taki koi aur access na kare
-    if request.GET.get("key") != "mysecret123":
-        return HttpResponse("Not authorized", status=403)
+#     return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
+# def create_superuser(request):
+#     # Ye secret key ya simple check laga do taki koi aur access na kare
+#     if request.GET.get("key") != "mysecret123":
+#         return HttpResponse("Not authorized", status=403)
 
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser(
-            username="admin",
-            email="admin@example.com",
-            password="Admin@123"
-        )
-        return HttpResponse("Superuser created successfully!")
-    return HttpResponse("Superuser already exists.")
+#     if not User.objects.filter(username="admin").exists():
+#         User.objects.create_superuser(
+#             username="admin",
+#             email="admin@example.com",
+#             password="Admin@123"
+#         )
+#         return HttpResponse("Superuser created successfully!")
+#     return HttpResponse("Superuser already exists.")
 
 @login_required
 def admin_categories(request):
