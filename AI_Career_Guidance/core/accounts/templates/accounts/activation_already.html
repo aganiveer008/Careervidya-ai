@@ -1,0 +1,63 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-yellow-400 via-orange-500 to-pink-500">
+
+  <div class="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center animate-fade-in">
+
+    <!-- ⚠️ ICON -->
+    <div class="flex justify-center mb-6">
+      <div class="bg-yellow-100 p-4 rounded-full">
+        <svg class="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" stroke-width="3"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 9v2m0 4h.01M12 5a7 7 0 110 14 7 7 0 010-14z"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- ⚠️ TITLE -->
+    <h2 class="text-3xl font-bold text-gray-800 mb-3">
+      Already Verified ⚠️
+    </h2>
+
+    <!-- 💬 MESSAGE -->
+    <p class="text-gray-600 mb-6">
+      Your account is already verified.<br>
+      You can login and continue your journey 🚀
+    </p>
+
+    <!-- 🔐 BUTTON -->
+    <a href="/login/"
+       class="inline-block px-6 py-3 bg-yellow-500 text-white rounded-xl font-semibold shadow-md hover:bg-yellow-600 transition transform hover:scale-105">
+       Login Now →
+    </a>
+
+    <!-- 🔐 FOOTER -->
+    <p class="text-sm text-gray-400 mt-6">
+      CareerVidya AI keeps your account secure 🔒
+    </p>
+
+  </div>
+
+</div>
+
+<style>
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+
+{% endblock %}

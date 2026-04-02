@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 GROQ_API_KEY= os.environ.get("GROQ_API_KEY")
 ELEVEN_API_KEY= os.environ.get("ELEVEN_API_KEY")
 GROQ_API= os.environ.get("GROQ_API")
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -170,14 +171,13 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'patyaldeepanshu05@gmail.com'      # Apna email
-# # EMAIL_HOST_PASSWORD = ''   
-# EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASS")    # Gmail App Password
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'patyaldeepanshu05@gmail.com'      # Apna email
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASS")    # Gmail App Password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 
@@ -188,17 +188,16 @@ LOGOUT_REDIRECT_URL = '/'
 # EMAIL_USE_TLS = True
 
 # EMAIL_HOST_USER = 'apikey'
-# EMAIL_HOST_PASSWORD = ''
-
+# EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PASS") 
 # DEFAULT_FROM_EMAIL = 'patyaldeepanshu05@gmail.com'
 
 # SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 load_dotenv()
 
-SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+# SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 
-DEFAULT_FROM_EMAIL = "patyaldeepanshu05@gmail.com"
+# DEFAULT_FROM_EMAIL = "patyaldeepanshu05@gmail.com"
 SITE_ID = int(os.environ.get("SITE_ID", 1))
 # SITE_ID = 2
 AUTHENTICATION_BACKENDS = [

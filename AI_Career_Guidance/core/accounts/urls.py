@@ -2,7 +2,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
     home, login_view, register_view, dashboard, logout_view,
-    edit_profile, career_detail,admin_quiz_result_delete,about_us,career_result,admin_student_profiles,refresh_captcha,
+    edit_profile, career_detail,admin_quiz_result_delete,about_us,career_result,admin_student_profiles,refresh_captcha,activate_account,
     # import_careers_temp,delete_json_careers,delete_all_careers,run_migrations,create_superuser,
 # import_courses_temp,delete_all_courses,
     # admin panel views
@@ -69,6 +69,7 @@ urlpatterns = [
     
     path('refresh-captcha/', refresh_captcha, name='refresh_captcha'),
     path('dashboard/resumes/', resume_list, name='admin_resumes'),
+    path('activate/<uidb64>/<token>/', activate_account, name='activate'),
 
 
     # path('run-migrations/', run_migrations),

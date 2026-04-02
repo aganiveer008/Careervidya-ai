@@ -43,6 +43,12 @@
       Create Account ✨
     </h2>
 
+      {% if success %}
+    <div style="color: green;">
+        {{ success }}
+    </div>
+{% endif %}
+
     <p class="text-center text-gray-500 mb-8">
       Join CareerVidya AI and build your future
     </p>
@@ -133,6 +139,8 @@
     required
     class="w-full mt-2 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none transition"
   >
+
+
 </div>
       {% if error %}
       <p class="text-red-500 text-sm text-center">{{ error }}</p>
