@@ -595,6 +595,7 @@ def register_view(request):
         )
         user.is_active = False
         user.save()
+        request.session['email'] = email
 
         # 🔥 TOKEN GENERATE
         uid = urlsafe_base64_encode(force_bytes(user.pk))
@@ -643,9 +644,7 @@ def register_view(request):
             """
         )
 
-        return render(request, 'accounts/register.html', {
-            'success': '✅ Registration successful! Check your email to verify your account.'
-        })
+        return redirect('check_email')
 
     # ✅ GET request (captcha load)
     captcha = CaptchaStore.generate_key()

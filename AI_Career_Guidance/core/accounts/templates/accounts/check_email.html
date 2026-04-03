@@ -1,0 +1,55 @@
+{% extends 'accounts/base.html' %}
+
+{% block content %}
+
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
+
+  <div class="bg-white rounded-3xl shadow-2xl p-10 max-w-md w-full text-center animate-fade-in">
+
+    <!-- 📩 ICON -->
+    <div class="flex justify-center mb-6">
+      <div class="bg-blue-100 p-4 rounded-full">
+        <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M3 8l9 6 9-6M21 8v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 🎉 TITLE -->
+    <h2 class="text-3xl font-bold text-gray-800 mb-3">
+      Check Your Email 📩
+    </h2>
+<p class="text-gray-600">
+  We sent a link to <b>{{ request.session.email }}</b>
+</p>
+    <!-- 💬 MESSAGE -->
+    <p class="text-gray-600 mb-6">
+      Your registration was successful!<br>
+      We have sent a verification link to your email.<br><br>
+      Please verify your email first, then login.
+    </p>
+
+    <!-- 🔐 BUTTON -->
+    <a href="/login/"
+       class="inline-block px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold shadow-md hover:bg-indigo-700 transition">
+       Go to Login →
+    </a>
+
+  </div>
+
+</div>
+
+<style>
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+
+{% endblock %}
