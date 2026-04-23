@@ -4,7 +4,7 @@ from .views import (
     home, login_view, register_view, dashboard, logout_view,
     edit_profile, career_detail,admin_quiz_result_delete,about_us,career_result,admin_student_profiles,refresh_captcha,activate_account,
 #     import_careers_temp,delete_json_careers,delete_all_careers,run_migrations,create_superuser,
-# import_courses_temp,delete_all_courses,
+import_courses_temp,delete_all_courses,
     # admin panel views
     admin_dashboard, admin_users, admin_careers,contact_view,career_quiz,admin_quiz_add,admin_quiz_edit, resume_list,skill_based_careers,admin_categories,edit_category,delete_category,admin_quiz_results,
     admin_user_edit, admin_user_delete,admin_users_bulk_delete,admin_skills_bulk_delete,admin_quiz_list,admin_quiz_delete,edit_account,download_career_pdf,
@@ -79,8 +79,8 @@ urlpatterns = [
     # path('import-careers-temp/', import_careers_temp, name='import-careers-temp'),
     # path('delete-json-careers/', delete_json_careers, name='delete_json_careers'),
     # path('delete-all-careers/', delete_all_careers, name='delete_all_careers'),
-    # path('import-courses-temp/', import_courses_temp),
-    # path('delete-all-courses/', delete_all_courses),
+    path('import-courses-temp/', import_courses_temp),
+    path('delete-all-courses/', delete_all_courses),
 
 ]
 

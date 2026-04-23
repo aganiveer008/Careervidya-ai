@@ -1765,85 +1765,85 @@ def admin_student_profiles(request):
 
 
 
-# def import_courses_temp(request):
-#     if not request.user.is_superuser:
-#         return HttpResponse("❌ Not authorized", status=403)
+def import_courses_temp(request):
+    if not request.user.is_superuser:
+        return HttpResponse("❌ Not authorized", status=403)
 
-#     # 🔥 AUTO-DETECT PATH
-#     possible_paths = [
-#         os.path.join(settings.BASE_DIR, "courses.json"),
-#         os.path.join(settings.BASE_DIR, "core", "courses.json"),
-#         os.path.join(os.getcwd(), "courses.json"),
-#         os.path.join(os.getcwd(), "core", "courses.json"),
-#     ]
+    # 🔥 AUTO-DETECT PATH
+    possible_paths = [
+        os.path.join(settings.BASE_DIR, "courses.json"),
+        os.path.join(settings.BASE_DIR, "core", "courses.json"),
+        os.path.join(os.getcwd(), "courses.json"),
+        os.path.join(os.getcwd(), "core", "courses.json"),
+    ]
 
-#     file_path = None
-#     for path in possible_paths:
-#         if os.path.exists(path):
-#             file_path = path
-#             break
+    file_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            file_path = path
+            break
 
-#     if not file_path:
-#         return HttpResponse("❌ courses.json file not found!", status=404)
+    if not file_path:
+        return HttpResponse("❌ courses.json file not found!", status=404)
 
-#     # Load JSON safely
-#     try:
-#         with open(file_path, 'r', encoding='utf-8-sig') as f:
-#             data = json.load(f)
-#     except UnicodeDecodeError:
-#         with open(file_path, 'r', encoding='utf-16') as f:
-#             data = json.load(f)
-#     except json.JSONDecodeError:
-#         return HttpResponse("❌ JSON format is invalid!", status=400)
+    # Load JSON safely
+    try:
+        with open(file_path, 'r', encoding='utf-8-sig') as f:
+            data = json.load(f)
+    except UnicodeDecodeError:
+        with open(file_path, 'r', encoding='utf-16') as f:
+            data = json.load(f)
+    except json.JSONDecodeError:
+        return HttpResponse("❌ JSON format is invalid!", status=400)
 
-#     # Ensure list
-#     if isinstance(data, dict):
-#         courses_list = [data]
-#     elif isinstance(data, list):
-#         courses_list = data
-#     else:
-#         return HttpResponse("❌ Invalid JSON structure!", status=400)
+    # Ensure list
+    if isinstance(data, dict):
+        courses_list = [data]
+    elif isinstance(data, list):
+        courses_list = data
+    else:
+        return HttpResponse("❌ Invalid JSON structure!", status=400)
 
-#     # Import courses
-#     for c in courses_list:
-#         if not isinstance(c, dict):
-#             continue
+    # Import courses
+    for c in courses_list:
+        if not isinstance(c, dict):
+            continue
 
-#         # Category
-#         category_name = c.get('category')
-#         category_obj = None
-#         if category_name:
-#             try:
-#                 category_obj = Category.objects.get(name=category_name)
-#             except Category.DoesNotExist:
-#                 print(f"Category '{category_name}' not found. Skipping '{c.get('title')}'")
-#                 continue
+        # Category
+        category_name = c.get('category')
+        category_obj = None
+        if category_name:
+            try:
+                category_obj = Category.objects.get(name=category_name)
+            except Category.DoesNotExist:
+                print(f"Category '{category_name}' not found. Skipping '{c.get('title')}'")
+                continue
 
-#         # Course
-#         Course.objects.get_or_create(
-#             title=c.get('title', 'Unnamed Course'),
-#             defaults={
-#                 'description': c.get('description', ''),
-#                 'content_type': c.get('content_type', 'image'),
-#                 'image': c.get('image', ''),
-#                 'video_url': c.get('video_url', ''),
-#                 'price': c.get('price', ''),
-#                 'category': category_obj,
-#                 'level': c.get('level', ''),
-#                 'rating': c.get('rating', 0),
-#                 'duration': c.get('duration', ''),
-#                 'link': c.get('link', ''),
-#                 'is_featured': c.get('is_featured', False),
-#                 'imported_from_json': True,
-#             }
-#         )
+        # Course
+        Course.objects.get_or_create(
+            title=c.get('title', 'Unnamed Course'),
+            defaults={
+                'description': c.get('description', ''),
+                'content_type': c.get('content_type', 'image'),
+                'image': c.get('image', ''),
+                'video_url': c.get('video_url', ''),
+                'price': c.get('price', ''),
+                'category': category_obj,
+                'level': c.get('level', ''),
+                'rating': c.get('rating', 0),
+                'duration': c.get('duration', ''),
+                'link': c.get('link', ''),
+                'is_featured': c.get('is_featured', False),
+                'imported_from_json': True,
+            }
+        )
 
-#     return HttpResponse("✅ Courses imported successfully!")
+    return HttpResponse("✅ Courses imported successfully!")
 
 
-# def delete_all_courses(request):
-#     if not request.user.is_superuser:
-#         return HttpResponse("❌ Not authorized", status=403)
+def delete_all_courses(request):
+    if not request.user.is_superuser:
+        return HttpResponse("❌ Not authorized", status=403)
 
-#     deleted_count, _ = Course.objects.all().delete()
-#     return HttpResponse(f"✅ {deleted_count} courses deleted successfully!")
+    deleted_count, _ = Course.objects.all().delete()
+    return HttpResponse(f"✅ {deleted_count} courses deleted successfully!")
