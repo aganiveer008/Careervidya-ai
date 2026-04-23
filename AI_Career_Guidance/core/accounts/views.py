@@ -1368,33 +1368,33 @@ def skill_based_careers(request):
         'careers': careers
     })
 
-import subprocess
+# import subprocess
+# @staff_member_required
+# def run_migrations(request):
+#     core_path = "/opt/render/project/src/AI_Career_Guidance/core"
 
-def run_migrations(request):
-    core_path = "/opt/render/project/src/AI_Career_Guidance/core"
+#     # Run all migrations safely
+#     result = subprocess.run(
+#         ["python", "manage.py", "migrate", "--noinput"],
+#         cwd=core_path,
+#         capture_output=True,
+#         text=True
+#     )
 
-    # Run all migrations safely
-    result = subprocess.run(
-        ["python", "manage.py", "migrate", "--noinput"],
-        cwd=core_path,
-        capture_output=True,
-        text=True
-    )
+#     return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
+# def create_superuser(request):
+#     # Ye secret key ya simple check laga do taki koi aur access na kare
+#     if request.GET.get("key") != "mysecret123":
+#         return HttpResponse("Not authorized", status=403)
 
-    return HttpResponse(f"<pre>{result.stdout}\n{result.stderr}</pre>")
-def create_superuser(request):
-    # Ye secret key ya simple check laga do taki koi aur access na kare
-    if request.GET.get("key") != "mysecret123":
-        return HttpResponse("Not authorized", status=403)
-
-    if not User.objects.filter(username="admin").exists():
-        User.objects.create_superuser(
-            username="admin",
-            email="admin@example.com",
-            password="Admin@123"
-        )
-        return HttpResponse("Superuser created successfully!")
-    return HttpResponse("Superuser already exists.")
+#     if not User.objects.filter(username="admin").exists():
+#         User.objects.create_superuser(
+#             username="admin",
+#             email="admin@example.com",
+#             password="Admin@123"
+#         )
+#         return HttpResponse("Superuser created successfully!")
+#     return HttpResponse("Superuser already exists.")
 
 @login_required
 def admin_categories(request):
@@ -1669,181 +1669,181 @@ def admin_student_profiles(request):
 
 
 
-def import_careers_temp(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
+# def import_careers_temp(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
 
-    # 🔥 PATH AUTO DETECT
-    possible_paths = [
-        os.path.join(settings.BASE_DIR, "core", "data.json"),
-        os.path.join(settings.BASE_DIR, "AI_Career_Guidance", "core", "data.json"),
-        os.path.join(os.getcwd(), "core", "data.json"),
-        os.path.join(os.getcwd(), "AI_Career_Guidance", "core", "data.json"),
-    ]
+#     # 🔥 PATH AUTO DETECT
+#     possible_paths = [
+#         os.path.join(settings.BASE_DIR, "core", "data.json"),
+#         os.path.join(settings.BASE_DIR, "AI_Career_Guidance", "core", "data.json"),
+#         os.path.join(os.getcwd(), "core", "data.json"),
+#         os.path.join(os.getcwd(), "AI_Career_Guidance", "core", "data.json"),
+#     ]
 
-    file_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            file_path = path
-            break
+#     file_path = None
+#     for path in possible_paths:
+#         if os.path.exists(path):
+#             file_path = path
+#             break
 
-    if not file_path:
-        return HttpResponse("❌ data.json file not found!", status=404)
+#     if not file_path:
+#         return HttpResponse("❌ data.json file not found!", status=404)
 
-    # 🔥 LOAD JSON
-    try:
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
-            data = json.load(f)
-    except UnicodeDecodeError:
-        with open(file_path, 'r', encoding='utf-16') as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        return HttpResponse("❌ JSON format invalid!", status=400)
+#     # 🔥 LOAD JSON
+#     try:
+#         with open(file_path, 'r', encoding='utf-8-sig') as f:
+#             data = json.load(f)
+#     except UnicodeDecodeError:
+#         with open(file_path, 'r', encoding='utf-16') as f:
+#             data = json.load(f)
+#     except json.JSONDecodeError:
+#         return HttpResponse("❌ JSON format invalid!", status=400)
 
-    careers = data if isinstance(data, list) else [data]
+#     careers = data if isinstance(data, list) else [data]
 
-    # 🔥 IMPORT LOOP
-    for c in careers:
-        if not isinstance(c, dict):
-            continue
+#     # 🔥 IMPORT LOOP
+#     for c in careers:
+#         if not isinstance(c, dict):
+#             continue
 
-        fields = c.get('fields', {})
+#         fields = c.get('fields', {})
 
-        # ✅ CATEGORY
-        category_name = fields.get('category')
-        category_obj = None
+#         # ✅ CATEGORY
+#         category_name = fields.get('category')
+#         category_obj = None
 
-        if category_name:
-            category_obj, _ = Category.objects.get_or_create(name=category_name)
+#         if category_name:
+#             category_obj, _ = Category.objects.get_or_create(name=category_name)
 
-        # ✅ CAREER
-        career_obj, created = Career.objects.get_or_create(
-            name=fields.get('name', 'Unnamed Career'),
-            defaults={
-                'description': fields.get('description', ''),
-                'category': category_obj,
-                'average_salary': fields.get('average_salary', ''),
-                'future_scope': fields.get('future_scope', ''),
-                'recommended_courses': fields.get('recommended_courses', ''),
-                'roadmap': fields.get('roadmap', ''),
-                'imported_from_json': True,
-            }
-        )
+#         # ✅ CAREER
+#         career_obj, created = Career.objects.get_or_create(
+#             name=fields.get('name', 'Unnamed Career'),
+#             defaults={
+#                 'description': fields.get('description', ''),
+#                 'category': category_obj,
+#                 'average_salary': fields.get('average_salary', ''),
+#                 'future_scope': fields.get('future_scope', ''),
+#                 'recommended_courses': fields.get('recommended_courses', ''),
+#                 'roadmap': fields.get('roadmap', ''),
+#                 'imported_from_json': True,
+#             }
+#         )
 
-        # 🔥 SKILLS (MAIN FIX)
-        skills = fields.get('required_skills', [])
+#         # 🔥 SKILLS (MAIN FIX)
+#         skills = fields.get('required_skills', [])
 
-        for skill_name in skills:
+#         for skill_name in skills:
 
-            skill_obj, created = Skill.objects.get_or_create(name=skill_name)
+#             skill_obj, created = Skill.objects.get_or_create(name=skill_name)
 
-            # 🔥 DIRECT CATEGORY ASSIGN (BEST LOGIC)
-            if category_obj:
-                skill_obj.category = category_obj
-                skill_obj.save()
+#             # 🔥 DIRECT CATEGORY ASSIGN (BEST LOGIC)
+#             if category_obj:
+#                 skill_obj.category = category_obj
+#                 skill_obj.save()
 
-            career_obj.required_skills.add(skill_obj)
+#             career_obj.required_skills.add(skill_obj)
 
-    return HttpResponse("✅ Careers + Skills + Categories imported successfully 🚀")
+#     return HttpResponse("✅ Careers + Skills + Categories imported successfully 🚀")
 
-def delete_json_careers(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
+# def delete_json_careers(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
 
-    # Delete only careers imported from JSON
-    deleted_count, _ = Career.objects.filter(imported_from_json=True).delete()
+#     # Delete only careers imported from JSON
+#     deleted_count, _ = Career.objects.filter(imported_from_json=True).delete()
     
-    return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
+#     return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
 
 
-def delete_all_careers(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
+# def delete_all_careers(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
 
-    deleted_count, _ = Career.objects.all().delete()
-    return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
-
-
-
-def import_courses_temp(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
-
-    # 🔥 AUTO-DETECT PATH
-    possible_paths = [
-        os.path.join(settings.BASE_DIR, "courses.json"),
-        os.path.join(settings.BASE_DIR, "core", "courses.json"),
-        os.path.join(os.getcwd(), "courses.json"),
-        os.path.join(os.getcwd(), "core", "courses.json"),
-    ]
-
-    file_path = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            file_path = path
-            break
-
-    if not file_path:
-        return HttpResponse("❌ courses.json file not found!", status=404)
-
-    # Load JSON safely
-    try:
-        with open(file_path, 'r', encoding='utf-8-sig') as f:
-            data = json.load(f)
-    except UnicodeDecodeError:
-        with open(file_path, 'r', encoding='utf-16') as f:
-            data = json.load(f)
-    except json.JSONDecodeError:
-        return HttpResponse("❌ JSON format is invalid!", status=400)
-
-    # Ensure list
-    if isinstance(data, dict):
-        courses_list = [data]
-    elif isinstance(data, list):
-        courses_list = data
-    else:
-        return HttpResponse("❌ Invalid JSON structure!", status=400)
-
-    # Import courses
-    for c in courses_list:
-        if not isinstance(c, dict):
-            continue
-
-        # Category
-        category_name = c.get('category')
-        category_obj = None
-        if category_name:
-            try:
-                category_obj = Category.objects.get(name=category_name)
-            except Category.DoesNotExist:
-                print(f"Category '{category_name}' not found. Skipping '{c.get('title')}'")
-                continue
-
-        # Course
-        Course.objects.get_or_create(
-            title=c.get('title', 'Unnamed Course'),
-            defaults={
-                'description': c.get('description', ''),
-                'content_type': c.get('content_type', 'image'),
-                'image': c.get('image', ''),
-                'video_url': c.get('video_url', ''),
-                'price': c.get('price', ''),
-                'category': category_obj,
-                'level': c.get('level', ''),
-                'rating': c.get('rating', 0),
-                'duration': c.get('duration', ''),
-                'link': c.get('link', ''),
-                'is_featured': c.get('is_featured', False),
-                'imported_from_json': True,
-            }
-        )
-
-    return HttpResponse("✅ Courses imported successfully!")
+#     deleted_count, _ = Career.objects.all().delete()
+#     return HttpResponse(f"✅ {deleted_count} careers deleted successfully!")
 
 
-def delete_all_courses(request):
-    if not request.user.is_superuser:
-        return HttpResponse("❌ Not authorized", status=403)
 
-    deleted_count, _ = Course.objects.all().delete()
-    return HttpResponse(f"✅ {deleted_count} courses deleted successfully!")
+# def import_courses_temp(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
+
+#     # 🔥 AUTO-DETECT PATH
+#     possible_paths = [
+#         os.path.join(settings.BASE_DIR, "courses.json"),
+#         os.path.join(settings.BASE_DIR, "core", "courses.json"),
+#         os.path.join(os.getcwd(), "courses.json"),
+#         os.path.join(os.getcwd(), "core", "courses.json"),
+#     ]
+
+#     file_path = None
+#     for path in possible_paths:
+#         if os.path.exists(path):
+#             file_path = path
+#             break
+
+#     if not file_path:
+#         return HttpResponse("❌ courses.json file not found!", status=404)
+
+#     # Load JSON safely
+#     try:
+#         with open(file_path, 'r', encoding='utf-8-sig') as f:
+#             data = json.load(f)
+#     except UnicodeDecodeError:
+#         with open(file_path, 'r', encoding='utf-16') as f:
+#             data = json.load(f)
+#     except json.JSONDecodeError:
+#         return HttpResponse("❌ JSON format is invalid!", status=400)
+
+#     # Ensure list
+#     if isinstance(data, dict):
+#         courses_list = [data]
+#     elif isinstance(data, list):
+#         courses_list = data
+#     else:
+#         return HttpResponse("❌ Invalid JSON structure!", status=400)
+
+#     # Import courses
+#     for c in courses_list:
+#         if not isinstance(c, dict):
+#             continue
+
+#         # Category
+#         category_name = c.get('category')
+#         category_obj = None
+#         if category_name:
+#             try:
+#                 category_obj = Category.objects.get(name=category_name)
+#             except Category.DoesNotExist:
+#                 print(f"Category '{category_name}' not found. Skipping '{c.get('title')}'")
+#                 continue
+
+#         # Course
+#         Course.objects.get_or_create(
+#             title=c.get('title', 'Unnamed Course'),
+#             defaults={
+#                 'description': c.get('description', ''),
+#                 'content_type': c.get('content_type', 'image'),
+#                 'image': c.get('image', ''),
+#                 'video_url': c.get('video_url', ''),
+#                 'price': c.get('price', ''),
+#                 'category': category_obj,
+#                 'level': c.get('level', ''),
+#                 'rating': c.get('rating', 0),
+#                 'duration': c.get('duration', ''),
+#                 'link': c.get('link', ''),
+#                 'is_featured': c.get('is_featured', False),
+#                 'imported_from_json': True,
+#             }
+#         )
+
+#     return HttpResponse("✅ Courses imported successfully!")
+
+
+# def delete_all_courses(request):
+#     if not request.user.is_superuser:
+#         return HttpResponse("❌ Not authorized", status=403)
+
+#     deleted_count, _ = Course.objects.all().delete()
+#     return HttpResponse(f"✅ {deleted_count} courses deleted successfully!")
