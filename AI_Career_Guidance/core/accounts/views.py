@@ -1369,7 +1369,7 @@ def skill_based_careers(request):
     })
 
 import subprocess
-@staff_member_required
+
 def run_migrations(request):
     core_path = "/opt/render/project/src/AI_Career_Guidance/core"
 
