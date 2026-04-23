@@ -70,7 +70,7 @@ urlpatterns = [
     path('refresh-captcha/', refresh_captcha, name='refresh_captcha'),
     path('dashboard/resumes/', resume_list, name='admin_resumes'),
     path('activate/<uidb64>/<token>/', activate_account, name='activate'),
-    path('check-email/', check_email_view, name='check_email'),
+   
 
 
 
