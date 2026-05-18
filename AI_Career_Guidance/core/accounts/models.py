@@ -50,6 +50,8 @@ class StudentProfile(models.Model):
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     skills = models.ManyToManyField(Skill, blank=True)
     personality_quiz_completed = models.BooleanField(default=False)
+    otp = models.CharField(max_length=6, blank=True, null=True)
+    otp_verified = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
@@ -66,6 +68,7 @@ class StudentSkill(models.Model):
     )
     skill = models.ForeignKey(Skill, on_delete=models.CASCADE)
     level = models.IntegerField(default=1)  # 1–10 scale
+    
 
     def __str__(self):
         return f"{self.student.user.username} - {self.skill.name} ({self.level})"
@@ -141,7 +144,8 @@ class CombinedCareerResult(models.Model):
     total_score = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     match_percentage = models.PositiveIntegerField(null=True, blank=True)
-    skill_gap = models.JSONField(null=True, blank=True)  # 
+    skill_gap = models.JSONField(null=True, blank=True) 
+    category_scores = models.JSONField(default=dict, blank=True, null=True) # 
 
     def __str__(self):
         return f"{self.student.user.username} - {self.suggested_career} ({self.total_score})"

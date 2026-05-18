@@ -25,6 +25,8 @@
       Transform your career with AI-powered insights, smart resume building, and skill analysis.
     </p>
 
+   
+
     <div class="space-y-3 text-gray-300">
       <p>✔ Personalized Career Guidance</p>
       <p>✔ Smart Resume Builder</p>
@@ -38,9 +40,13 @@
 
 <!-- RIGHT SIDE (LOGIN FORM) -->
 <div class="flex items-center justify-center bg-gray-100 px-6 py-12">
-
+ 
   <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 md:p-10 animate-slide-up">
-
+<center>{% if messages %}
+  {% for message in messages %}
+    <p style="color: green;">{{ message }}</p>
+  {% endfor %}
+{% endif %}</center>
     <h2 class="text-3xl font-bold text-gray-800 text-center mb-2">
       Welcome Back 👋
     </h2>
@@ -48,6 +54,7 @@
     <p class="text-center text-gray-500 mb-8">
       Continue to login to your account
     </p>
+
 
     <form method="POST" class="space-y-5">
       {% csrf_token %}

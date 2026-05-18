@@ -44,7 +44,27 @@ from analyzer.models import ResumeAnalysis
 from django.views.decorators.cache import never_cache
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.shortcuts import render
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.shortcuts import render
+from django.utils.http import urlsafe_base64_decode
+from django.contrib.auth.models import User
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.models import User
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError
 
+from captcha.models import CaptchaStore
+from captcha.helpers import captcha_image_url
+
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
 @never_cache
 @login_required
 def dashboard(request):
@@ -74,29 +94,46 @@ def dashboard(request):
         top_career = result.suggested_career
         match_percentage = result.match_percentage or 0
 
-        # 🔥 Similar careers (SAFE)
-        careers = Career.objects.filter(
-            category=top_career.category
-        ).exclude(id=top_career.id)[:2]
-
-        all_careers = [(top_career, match_percentage)]
-        for c in careers:
-            all_careers.append((c, 50))  # dummy score
-
-        # 🔥 USER SKILLS
+        # USER SKILLS
         user_skills = {
             ss.skill.name.strip().lower(): ss.level
             for ss in profile.student_skills.select_related("skill")
         }
 
-        # 🔥 GAP ANALYSIS
-        for career, score in all_careers:
-            career_skills = {
-                s.name.strip().lower()
-                for s in career.required_skills.all()
-            }
+        # Similar careers - pehle skill se, phir category se
+        from django.db.models import Q
+        skill_query = Q()
+        for skill_name in user_skills.keys():
+            skill_query |= Q(required_skills__name__icontains=skill_name)
 
-            gap = list(career_skills - set(user_skills.keys()))
+        skill_similar = Career.objects.filter(
+            skill_query
+        ).exclude(id=top_career.id).distinct()
+
+        if skill_similar.count() < 2:
+            category_similar = Career.objects.filter(
+                category=top_career.category
+            ).exclude(id=top_career.id).exclude(
+                id__in=skill_similar.values_list('id', flat=True)
+            )
+            similar_careers = list(skill_similar) + list(category_similar)
+            similar_careers = similar_careers[:2]
+        else:
+            similar_careers = list(skill_similar[:2])
+
+        all_careers = [(top_career, match_percentage)]
+        for c in similar_careers:
+            all_careers.append((c, 50))
+
+        # GAP ANALYSIS
+        for career, score in all_careers:
+            career_skills = {s.name.strip().lower() for s in career.required_skills.all()}
+
+            gap = []
+            for cs in career_skills:
+                matched = any(us in cs or cs in us for us in user_skills.keys())
+                if not matched:
+                    gap.append(cs)
 
             top_careers_with_gap.append({
                 "career": career,
@@ -120,7 +157,6 @@ def dashboard(request):
     if profile.interest:
         completion += 10
 
-    # 🔥 IMPORTANT: quiz add kar
     if result:
         completion += 10
 
@@ -145,12 +181,12 @@ def dashboard(request):
     if top_career:
         for skill in top_career.required_skills.all():
             chart_labels.append(skill.name.strip())
-            chart_required.append(80)  # market demand
+            chart_required.append(80)
 
             if profile.student_skills.filter(skill=skill).exists():
-                chart_user.append(80)  # green
+                chart_user.append(80)
             else:
-                chart_user.append(0)   # red
+                chart_user.append(0)
 
     # ================= FINAL RENDER =================
     return render(request, "accounts/dashboard.html", {
@@ -249,52 +285,6 @@ def home(request):
     }
 
     return render(request, "accounts/home.html", context)
-# def login_view(request):
-#     if request.method == "POST":
-#         email = request.POST.get('email')
-#         password = request.POST.get('password')
-#         captcha_input = request.POST.get('captcha')
-#         captcha_key = request.POST.get('captcha_key')
-
-#         # ✅ CAPTCHA validation
-#         try:
-#             captcha_obj = CaptchaStore.objects.get(hashkey=captcha_key)
-#             if captcha_obj.response.lower() != captcha_input.lower():
-#                 raise Exception("Invalid Captcha")
-#         except:
-#             captcha = CaptchaStore.generate_key()
-#             captcha_image = captcha_image_url(captcha)
-
-#             return render(request, 'accounts/login.html', {
-#                 'error': 'Invalid Captcha',
-#                 'captcha_key': captcha,
-#                 'captcha_image': captcha_image
-#             })
-
-#         # ✅ AUTHENTICATION
-#         user = authenticate(request, username=email, password=password)
-
-#         if user:
-#             login(request, user)
-#             return redirect('dashboard')
-#         else:
-#             captcha = CaptchaStore.generate_key()
-#             captcha_image = captcha_image_url(captcha)
-
-#             return render(request, 'accounts/login.html', {
-#                 'error': 'Invalid credentials',
-#                 'captcha_key': captcha,
-#                 'captcha_image': captcha_image
-#             })
-
-#     # ✅ First load captcha
-#     captcha = CaptchaStore.generate_key()
-#     captcha_image = captcha_image_url(captcha)
-
-#     return render(request, 'accounts/login.html', {
-#         'captcha_key': captcha,
-#         'captcha_image': captcha_image
-#     })
 
 
 def login_view(request):
@@ -364,228 +354,115 @@ def refresh_captcha(request):
     })
 
 
+
+# locally eamil setup code
+from django.core.mail import EmailMultiAlternatives
+
 def send_email(to_email, subject, html_content):
-    message = Mail(
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to_emails=to_email,
-        subject=subject,
-        html_content=html_content
+    # Django EmailMultiAlternatives for HTML + plain text
+    plain_text = "Your registration is successful."
+    msg = EmailMultiAlternatives(
+        subject,
+        plain_text,
+        settings.DEFAULT_FROM_EMAIL,
+        [to_email]
     )
-
-    # Add plain text version
-    message.add_content(Content("text/plain", "Your registration is successful."))
-
-    # Optional: Reply-To header
-    message.reply_to = settings.DEFAULT_FROM_EMAIL
-
+    msg.attach_alternative(html_content, "text/html")
     try:
-        sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
-        response = sg.send(message)
-        print("Email sent, status:", response.status_code)
+        msg.send()
+        print(f"Email sent to {to_email}")
     except Exception as e:
-        print("Error sending email:", e)
+        print(f"Error sending email: {e}")
 
-# def register_view(request):
-#     if request.method == "POST":
-#         first_name = request.POST.get('first_name')
-#         last_name = request.POST.get('last_name')
-#         email = request.POST.get('email')
-#         password = request.POST.get('password')
-#         captcha_input = request.POST.get('captcha')
+def check_email_view(request):
+    return render(request, 'accounts/check_email.html') 
 
-#         if not all([first_name, last_name, email, password, captcha_input]):
-#             return render(request, 'accounts/register.html', {'error': 'All fields are required'})
 
-#         if not re.match("^[A-Za-z]+$", first_name):
-#             return render(request, 'accounts/register.html', {'error': 'First name should contain only letters'})
 
-#         if not re.match("^[A-Za-z]+$", last_name):
-#             return render(request, 'accounts/register.html', {'error': 'Last name should contain only letters'})
+def send_email(to_email, subject, html_content):
+    try:
+        msg = EmailMultiAlternatives(
+            subject,
+            "Notification from CareerVidya AI",
+            settings.DEFAULT_FROM_EMAIL,
+            [to_email]
+        )
+        msg.attach_alternative(html_content, "text/html")
+        msg.send(fail_silently=False)
 
-#         if User.objects.filter(username=email).exists():
-#             return render(request, 'accounts/register.html', {'error': 'Email already registered'})
+        print(f"✅ Email sent to {to_email}")
 
-#         captcha_key = request.POST.get('captcha_key')
-#         try:
-#             captcha_obj = CaptchaStore.objects.get(hashkey=captcha_key)
-#             if captcha_obj.response.lower() != captcha_input.lower():
-#                 raise Exception()
-#         except:
-#             return render(request, 'accounts/register.html', {'error': 'Invalid Captcha'})
+    except Exception as e:
+        print(f"❌ EMAIL ERROR to {to_email}:", e)
 
-#         user = User.objects.create_user(
-#             username=email,
-#             email=email,
-#             password=password,
-#             first_name=first_name,
-#             last_name=last_name
-#         )
-
-#         user = authenticate(request, username=email, password=password)
-#         if user:
-#             login(request, user)
-
-#         send_email(
-#             email,
-#             "Welcome to CareerVidya AI",
-#             f"""
-#             <h2>Hello {first_name}</h2>
-#             <p>Your registration is successful.</p>
-#             <p>Platform: CareerVidya AI</p>
-#             <p>Start exploring now</p>
-#             <p>Thanks<br>CareerVidya Team</p>
-#             """
-#         )
-
-#         send_email(
-#             "patyaldeepanshu05@gmail.com",
-#             "New User Registered",
-#             f"""
-#             <h3>New User Registered</h3>
-#             <p>Name: {first_name} {last_name}</p>
-#             <p>Email: {email}</p>
-#             """
-#         )
-
-#         return redirect('dashboard')
-
-#     captcha = CaptchaStore.generate_key()
-#     captcha_image = captcha_image_url(captcha)
-
-#     return render(request, 'accounts/register.html', {
-#         'captcha_key': captcha,
-#         'captcha_image': captcha_image
-#     })
-
-# # locally eamil setup code
-# from django.core.mail import EmailMultiAlternatives
-
-# def send_email(to_email, subject, html_content):
-#     # Django EmailMultiAlternatives for HTML + plain text
-#     plain_text = "Your registration is successful."
-#     msg = EmailMultiAlternatives(
-#         subject,
-#         plain_text,
-#         settings.DEFAULT_FROM_EMAIL,
-#         [to_email]
-#     )
-#     msg.attach_alternative(html_content, "text/html")
-#     try:
-#         msg.send()
-#         print(f"Email sent to {to_email}")
-#     except Exception as e:
-#         print(f"Error sending email: {e}")
-
-# def register_view(request):
-#     if request.method == "POST":
-#         first_name = request.POST.get('first_name')
-#         last_name = request.POST.get('last_name')
-#         email = request.POST.get('email')
-#         password = request.POST.get('password')
-#         captcha_input = request.POST.get('captcha')
-
-#         # Basic validation
-#         if not all([first_name, last_name, email, password, captcha_input]):
-#             return render(request, 'accounts/register.html', {'error': 'All fields are required'})
-
-#         if not first_name.isalpha() or not last_name.isalpha():
-#             return render(request, 'accounts/register.html', {'error': 'Names should contain only letters'})
-
-#         if User.objects.filter(username=email).exists():
-#             return render(request, 'accounts/register.html', {'error': 'Email already registered'})
-
-#         # Captcha validation
-#         captcha_key = request.POST.get('captcha_key')
-#         try:
-#             captcha_obj = CaptchaStore.objects.get(hashkey=captcha_key)
-#             if captcha_obj.response.lower() != captcha_input.lower():
-#                 raise Exception()
-#         except:
-#             return render(request, 'accounts/register.html', {'error': 'Invalid Captcha'})
-
-#         # Create user
-#         user = User.objects.create_user(
-#             username=email,
-#             email=email,
-#             password=password,
-#             first_name=first_name,
-#             last_name=last_name
-#         )
-
-#         user = authenticate(request, username=email, password=password)
-#         if user:
-#             login(request, user)
-
-#         # Send user email
-#         send_email(
-#             email,
-#             "Welcome to CareerVidya AI",
-#             f"""
-#             <h2>Hello {first_name}</h2>
-#             <p>Your registration is successful.</p>
-#             <p>Platform: CareerVidya AI</p>
-#             <p>Start exploring now</p>
-#             <p>Thanks<br>CareerVidya Team</p>
-#             """
-#         )
-
-#         # Send admin email
-#         send_email(
-#             "patyaldeepanshu05@gmail.com",
-#             "New User Registered",
-#             f"""
-#             <h3>New User Registered</h3>
-#             <p>Name: {first_name} {last_name}</p>
-#             <p>Email: {email}</p>
-#             """
-#         )
-
-#         return redirect('dashboard')
-
-#     # Generate captcha
-#     captcha = CaptchaStore.generate_key()
-#     captcha_image = captcha_image_url(captcha)
-
-#     return render(request, 'accounts/register.html', {
-#         'captcha_key': captcha,
-#         'captcha_image': captcha_image
-#     })
-
-from django.shortcuts import render
-from django.contrib.auth.models import User
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
-from django.contrib.auth.tokens import default_token_generator
-from django.urls import reverse
 
 def register_view(request):
-    if request.method == "POST":
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        captcha_input = request.POST.get('captcha')
 
-        # ✅ Validation
+    if request.method == "POST":
+
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        password = request.POST.get('password', '').strip()
+        captcha_input = request.POST.get('captcha', '').strip()
+        captcha_key = request.POST.get('captcha_key')
+
+        # ---------------- VALIDATION ----------------
         if not all([first_name, last_name, email, password, captcha_input]):
-            return render(request, 'accounts/register.html', {'error': 'All fields are required'})
+            return render(request, 'accounts/register.html', {
+                'error': 'All fields are required'
+            })
 
         if not first_name.isalpha() or not last_name.isalpha():
-            return render(request, 'accounts/register.html', {'error': 'Names should contain only letters'})
+            return render(request, 'accounts/register.html', {
+                'error': 'Names should contain only letters'
+            })
 
+        try:
+            validate_email(email)
+        except ValidationError:
+            return render(request, 'accounts/register.html', {
+                'error': 'Enter a valid email address'
+            })
+
+        domain = email.split('@')[-1]
+        if '.' not in domain or len(domain.split('.')[-1]) < 2:
+            return render(request, 'accounts/register.html', {
+                'error': 'Invalid email domain'
+            })
+
+        # ---------------- EXISTING USER CHECK ----------------
         if User.objects.filter(username=email).exists():
-            return render(request, 'accounts/register.html', {'error': 'Email already registered'})
+            existing_user = User.objects.get(username=email)
 
-        # ✅ Captcha validation
-        captcha_key = request.POST.get('captcha_key')
+            if not existing_user.is_active:
+                otp = str(random.randint(100000, 999999))
+
+                profile, _ = StudentProfile.objects.get_or_create(user=existing_user)
+                profile.otp = otp
+                profile.save()
+
+                send_email(email, "Verify Your Email - CareerVidya AI", f"Your new OTP is: {otp}")
+
+                request.session['verify_email'] = email
+                messages.success(request, "OTP resent to your email!")
+                return redirect('verify_otp')
+
+            return render(request, 'accounts/register.html', {
+                'error': 'Email already registered. Please login.'
+            })
+
+        # ---------------- CAPTCHA ----------------
         try:
             captcha_obj = CaptchaStore.objects.get(hashkey=captcha_key)
             if captcha_obj.response.lower() != captcha_input.lower():
                 raise Exception()
         except:
-            return render(request, 'accounts/register.html', {'error': 'Invalid Captcha'})
+            return render(request, 'accounts/register.html', {
+                'error': 'Invalid Captcha'
+            })
 
-        # 🔥 CREATE USER (INACTIVE)
+        # ---------------- CREATE USER ----------------
         user = User.objects.create_user(
             username=email,
             email=email,
@@ -595,72 +472,99 @@ def register_view(request):
         )
         user.is_active = False
         user.save()
-        request.session['email'] = email
 
-        # 🔥 TOKEN GENERATE
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        token = default_token_generator.make_token(user)
+        # ---------------- OTP ----------------
+        otp = str(random.randint(100000, 999999))
 
-        # 🔥 IMPORTANT: LOCAL IP LINK (CHANGE IP HERE 👇)
-        # activation_link = f"http://10.208.152.19:8000/activate/{uid}/{token}/"
-        activation_link = request.build_absolute_uri(
-            reverse('activate', kwargs={'uidb64': uid, 'token': token})
-        )
-        activation_link = activation_link.replace("http://", "https://")
+        profile, _ = StudentProfile.objects.get_or_create(user=user)
+        profile.otp = otp
+        profile.save()
 
-        # 🔥 EMAIL CONTENT (PRO UI 🔥)
-        email_html = f"""
-        <h2>Hello {first_name} 👋</h2>
-        <p>Welcome to <b>CareerVidya AI</b></p>
+        # ---------------- EMAIL USER ----------------
+        send_email(email, "Verify Your Email - CareerVidya AI", f"Your OTP is: {otp}")
 
-        <p>Please verify your email by clicking the button below:</p>
+        request.session['verify_email'] = email
+        messages.success(request, "OTP sent to your email! Please verify.")
+        return redirect('verify_otp')
 
-        <a href="{activation_link}" 
-           style="display:inline-block;padding:12px 25px;background:#4CAF50;color:white;text-decoration:none;border-radius:5px;">
-           ✅ Verify Account
-        </a>
-
-        <p style="margin-top:20px;">If you didn't register, please ignore this email.</p>
-
-        <p>Thanks,<br>CareerVidya Team</p>
-        """
-
-        # 🔥 SEND EMAIL TO USER
-        send_email(
-            email,
-            "Verify your email - CareerVidya AI",
-            email_html
-        )
-
-        # 🔥 ADMIN EMAIL
-        send_email(
-            "patyaldeepanshu05@gmail.com",
-            "New User Registered (Pending Verification)",
-            f"""
-            <h3>New User Registered</h3>
-            <p>Name: {first_name} {last_name}</p>
-            <p>Email: {email}</p>
-            <p>Status: Not Verified</p>
-            """
-        )
-
-        return redirect('check_email')
-
-    # ✅ GET request (captcha load)
-    captcha = CaptchaStore.generate_key()
-    captcha_image = captcha_image_url(captcha)
+    # ---------------- GET ----------------
+    captcha_key = CaptchaStore.generate_key()
+    captcha_image = captcha_image_url(captcha_key)
 
     return render(request, 'accounts/register.html', {
-        'captcha_key': captcha,
+        'captcha_key': captcha_key,
         'captcha_image': captcha_image
     })
+def verify_otp(request):
+    email = request.session.get('verify_email')
 
+    if not email:
+        messages.error(request, "Session expired. Register again.")
+        return redirect('register')
 
+    if request.method == "POST":
+        entered_otp = request.POST.get('otp', '').strip()
 
-from django.shortcuts import render
-from django.utils.http import urlsafe_base64_decode
-from django.contrib.auth.models import User
-from django.contrib.auth.tokens import default_token_generator
+        try:
+            user = User.objects.filter(email=email).first()
+
+            if not user:
+                messages.error(request, "User not found")
+                return redirect('register')
+
+            profile, _ = StudentProfile.objects.get_or_create(user=user)
+
+            print("===== DEBUG =====")
+            print("DB OTP:", profile.otp)
+            print("ENTERED OTP:", entered_otp)
+
+            # -------- OTP MATCH --------
+            if str(profile.otp).strip() == str(entered_otp).strip():
+
+                print("✅ OTP VERIFIED")
+
+                user.is_active = True
+                user.save()
+
+                profile.otp = None
+                profile.otp_verified = True
+                profile.save()
+
+                # 🔥 EMAILS (separate try = no break)
+                try:
+                    print("📩 Sending USER email")
+                    send_email(
+                        user.email,
+                        "Registration Successful 🎉 - CareerVidya AI",
+                        f"Welcome {user.first_name}, your account is verified."
+                    )
+                except Exception as e:
+                    print("❌ USER EMAIL ERROR:", e)
+
+                try:
+                    print("📩 Sending ADMIN email")
+                    send_email(
+                        "patyaldeepanshu05@gmail.com",
+                        "New User Registered ✅",
+                        f"{user.first_name} {user.last_name} - {user.email}"
+                    )
+                except Exception as e:
+                    print("❌ ADMIN EMAIL ERROR:", e)
+
+                request.session.flush()
+
+                messages.success(request, "Email verified successfully!")
+                return redirect('login')
+
+            else:
+                messages.error(request, "Wrong OTP")
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            messages.error(request, "Something went wrong.")
+
+    return render(request, 'accounts/verify_otp.html', {'email': email})
 
 def activate_account(request, uidb64, token):
     try:
@@ -767,45 +671,76 @@ def edit_profile(request):
 
 def calculate_combined_career(profile):
 
+    user_skill_names = [
+        ss.skill.name.strip().lower()
+        for ss in profile.student_skills.select_related("skill")
+    ]
+
     user_skills = {
         ss.skill.name.strip().lower(): ss.level
         for ss in profile.student_skills.select_related("skill")
     }
 
+    quiz_result = CombinedCareerResult.objects.filter(student=profile).last()
+    user_category_scores = quiz_result.category_scores if quiz_result and quiz_result.category_scores else {}
+
+    from django.db.models import Q
+    skill_query = Q()
+    for skill_name in user_skill_names:
+        skill_query |= Q(required_skills__name__icontains=skill_name)
+
+    if skill_query:
+        careers = Career.objects.filter(skill_query).distinct().prefetch_related("required_skills").select_related("category")
+    else:
+        careers = Career.objects.prefetch_related("required_skills").select_related("category")
+
     career_scores = []
+    explanations = {}
 
-    for career in Career.objects.prefetch_related("required_skills").all():
-
-        career_skills = [
-            skill.name.strip().lower()
-            for skill in career.required_skills.all()
-        ]
-
-        if not career_skills:
+    for career in careers:
+        required_skills = list(career.required_skills.all())
+        if not required_skills:
             continue
 
-        total_score = 0
+        # SKILL SCORE (partial match)
+        total_skill_score = 0
+        matched_count = 0
+        for skill in required_skills:
+            cs = skill.name.strip().lower()
+            for us in user_skill_names:
+                if us in cs or cs in us:
+                    level = user_skills.get(us, 0)
+                    total_skill_score += (level * 2) + 2
+                    matched_count += 1
+                    break
 
-        for skill in career_skills:
-            user_level = user_skills.get(skill, 0)
+        skill_score = (total_skill_score / max(len(required_skills), 1)) * 100
 
-            if user_level > 0:
-                # normalize level (0–1)
-                total_score += user_level / 10
-            else:
-                total_score += 0
+        # PERSONALITY SCORE
+        if quiz_result and career.category and user_category_scores:
+            max_score = max(user_category_scores.values()) if user_category_scores else 1
+            category_score = user_category_scores.get(career.category.id, 0)
+            personality_score = (category_score / max_score) * 100
+        else:
+            personality_score = 0
 
-        # final percentage
-        skill_percentage = (total_score / len(career_skills)) * 100
+        # FINAL SCORE
+        if matched_count == 0:
+            final_score = personality_score * 0.3
+        else:
+            final_score = (skill_score * 0.7) + (personality_score * 0.3)
+        final_score = min(final_score, 100)
+        career_scores.append((career, round(final_score)))
+        explanations[career.id] = {
+            "skill_score": round(skill_score),
+            "personality_score": round(personality_score),
+            "final_score": round(final_score, 2),
+        }
 
-        career_scores.append((career, round(skill_percentage)))
-
-    # sort best → worst
     career_scores.sort(key=lambda x: x[1], reverse=True)
-
     top_career = career_scores[0][0] if career_scores else None
 
-    return top_career, career_scores, {}
+    return top_career, career_scores, explanations
    
 @login_required
 def career_detail(request, career_id):
@@ -1088,7 +1023,6 @@ def contact_view(request):
 @login_required
 def career_quiz(request):
 
-    # ---------- Get Profile Safely ----------
     try:
         profile = StudentProfile.objects.get(user=request.user)
     except StudentProfile.DoesNotExist:
@@ -1099,25 +1033,19 @@ def career_quiz(request):
         messages.error(request, "Please select your skills and interests first!")
         return redirect("dashboard")
 
-    # ---------- Check Previous Result ----------
-    last_result = CombinedCareerResult.objects.filter(
-        student=profile
-    ).last()
+    last_result = CombinedCareerResult.objects.filter(student=profile).last()
 
     if last_result and not request.GET.get("retake") and request.method != "POST":
         messages.info(request, "You have already attempted the quiz.")
         return redirect("dashboard")
 
-    # ---------- Load Questions ----------
     questions = CareerQuizQuestion.objects.prefetch_related("options").all()
 
-    # ================= POST SUBMIT =================
     if request.method == "POST":
 
         scores = {}
         unanswered = False
 
-        # -------- Collect Answers --------
         for question in questions:
             selected_option_id = request.POST.get(f"question_{question.id}")
 
@@ -1127,17 +1055,13 @@ def career_quiz(request):
 
             try:
                 option = CareerQuizOption.objects.get(id=selected_option_id)
-
                 if option.category:
-                    # ✅ FIX: use category.id (safe key)
                     scores[option.category.id] = (
                         scores.get(option.category.id, 0) + option.weight
                     )
-
             except CareerQuizOption.DoesNotExist:
                 continue
 
-        # -------- Validation --------
         if unanswered:
             messages.error(request, "Please answer all questions.")
             return redirect("career_quiz")
@@ -1150,20 +1074,37 @@ def career_quiz(request):
         sorted_categories = sorted(scores.items(), key=lambda x: x[1], reverse=True)
         top_categories_ids = [cat[0] for cat in sorted_categories[:2]]
 
-        # -------- Get Careers from Top Categories --------
-        careers = Career.objects.filter(
-            category__id__in=top_categories_ids
-        ).prefetch_related("required_skills")
+        # -------- User Skills --------
+        user_skill_names = [
+            ss.skill.name.strip().lower()
+            for ss in profile.student_skills.select_related("skill")
+        ]
 
-        if not careers.exists():
-            messages.error(request, "No careers found for your profile.")
-            return redirect("career_quiz")
-
-        # -------- Prepare User Skills --------
         user_skills = {
             ss.skill.name.strip().lower(): ss.level
             for ss in profile.student_skills.select_related("skill")
         }
+
+        # -------- Careers Filter (icontains se partial match) --------
+        from django.db.models import Q
+        skill_query = Q()
+        for skill_name in user_skill_names:
+            skill_query |= Q(required_skills__name__icontains=skill_name)
+
+        skill_matched_careers = Career.objects.filter(
+            skill_query
+        ).distinct().prefetch_related("required_skills").select_related("category")
+
+        if skill_matched_careers.exists():
+            careers = skill_matched_careers
+        else:
+            careers = Career.objects.filter(
+                category__id__in=top_categories_ids
+            ).prefetch_related("required_skills").select_related("category")
+
+        if not careers.exists():
+            messages.error(request, "No careers found for your profile.")
+            return redirect("career_quiz")
 
         best_career = None
         best_total_score = 0
@@ -1171,19 +1112,13 @@ def career_quiz(request):
         best_skill_score = 0
         skill_gap = []
 
-        # -------- Normalize personality max --------
         max_personality = max(scores.values()) if scores else 1
 
-        # -------- Evaluate Each Career --------
         for career in careers:
 
-            # Personality score
             personality_score = scores.get(career.category.id, 0)
-
-            # ✅ Normalize personality (0–100)
             personality_score_normalized = (personality_score / max_personality) * 100
 
-            # Career required skills
             career_skills = {
                 skill.name.strip().lower()
                 for skill in career.required_skills.all()
@@ -1192,36 +1127,43 @@ def career_quiz(request):
             if not career_skills:
                 continue
 
-            # -------- Skill Score (FIXED LOGIC) --------
+            # -------- Skill Score --------
             total_skill_score = 0
-
-            for skill in career_skills:
-                level = user_skills.get(skill, 0)
-                total_skill_score += level / 10   # normalize (0–1)
+            for user_skill in user_skill_names:
+                for career_skill in career_skills:
+                    if user_skill in career_skill or career_skill in user_skill:
+                        level = user_skills.get(user_skill, 0)
+                        total_skill_score += level / 10
+                        break
 
             skill_score = (total_skill_score / len(career_skills)) * 100
 
             # -------- Skill Gap --------
-            career_skill_gap = career_skills - set(user_skills.keys())
+            career_skill_gap = []
+            for cs in career_skills:
+                matched = any(us in cs or cs in us for us in user_skill_names)
+                if not matched:
+                    career_skill_gap.append(cs)
 
-            # -------- FINAL SCORE (BALANCED AI) --------
-            total_score = (0.5 * personality_score_normalized) + (0.5 * skill_score)
+            # -------- Final Score --------
+            if skill_score == 0:
+                total_score = personality_score_normalized * 0.05
+            else:
+                total_score = (0.4 * personality_score_normalized) + (0.6 * skill_score)
 
             if total_score > best_total_score:
                 best_total_score = total_score
                 best_career = career
                 best_quiz_score = round(personality_score_normalized)
                 best_skill_score = round(skill_score)
-                skill_gap = list(career_skill_gap)
+                skill_gap = career_skill_gap
 
         if not best_career:
             messages.error(request, "No suitable career found.")
             return redirect("career_quiz")
 
-        # -------- Match Percentage (FINAL FIX) --------
         match_percentage = round(best_total_score)
 
-        # -------- Save / Update Result --------
         CombinedCareerResult.objects.update_or_create(
             student=profile,
             defaults={
@@ -1231,6 +1173,7 @@ def career_quiz(request):
                 "total_score": best_total_score,
                 "match_percentage": match_percentage,
                 "skill_gap": skill_gap,
+                "category_scores": scores,
             }
         )
 
@@ -1240,7 +1183,6 @@ def career_quiz(request):
         messages.success(request, "Quiz submitted successfully!")
         return redirect("career_result")
 
-    # ================= GET REQUEST =================
     context = {
         "questions": questions,
         "retake_mode": bool(request.GET.get("retake")),
@@ -1625,36 +1567,29 @@ def career_result(request):
 
     career = result.suggested_career
 
-    # ---------- Prepare skill gap & match percentage ----------
-    user_skills = {ss.skill.name.lower(): ss.level for ss in profile.student_skills.all()}
+    user_skills = {ss.skill.name.strip().lower(): ss.level for ss in profile.student_skills.all()}
+    career_skills = {s.name.strip().lower() for s in career.required_skills.all()} if career else set()
 
-    career_skills = {s.name.lower() for s in career.required_skills.all()} if career else set()
-
-    matched_skills = set(user_skills.keys()) & career_skills
-    skill_score = sum(user_skills[s] for s in matched_skills)
-
-    skill_gap = list(career_skills - set(user_skills.keys()))
+    # Partial match skill gap
+    skill_gap = []
+    for cs in career_skills:
+        matched = any(us in cs or cs in us for us in user_skills.keys())
+        if not matched:
+            skill_gap.append(cs)
 
     personality_score = result.quiz_score
-    total_score = result.total_score
+    match_percentage = result.match_percentage or 0
 
-    # Match Percentage
-    max_personality_score = personality_score or 1
-    max_skill_score = sum(user_skills.values()) if user_skills else 1
-    max_total = (0.6 * max_personality_score) + (0.4 * max_skill_score)
-    match_percentage = round((total_score / max_total) * 100) if max_total else 0
-
-    # Optional: breakdown scores
     scores = {
         "Personality": personality_score,
-        "Skills": skill_score,
+        "Skills": result.skill_score,
     }
 
     context = {
         "career": career.name if career else "No Career",
-        "career_obj": career,   # clickable link in template
+        "career_obj": career,
         "description": career.description if career else "",
-        "final_score": total_score,
+        "final_score": result.total_score,
         "scores": scores,
         "match_percentage": match_percentage,
         "skill_gap": skill_gap,
