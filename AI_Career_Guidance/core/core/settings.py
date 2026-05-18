@@ -194,9 +194,9 @@ LOGOUT_REDIRECT_URL = '/'
 # SERVER_EMAIL = DEFAULT_FROM_EMAIL
 
 load_dotenv()
-
+EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
-
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False  # important!
 DEFAULT_FROM_EMAIL = "patyaldeepanshu05@gmail.com"
 SITE_ID = int(os.environ.get("SITE_ID", 1))
 # SITE_ID = 2
